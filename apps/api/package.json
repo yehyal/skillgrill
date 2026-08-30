@@ -1,0 +1,24 @@
+{
+  "name": "@skill-grill/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env XDG_CONFIG_HOME=.wrangler/config XDG_CACHE_HOME=.wrangler/cache WRANGLER_WRITE_LOGS=false wrangler dev --port 8787",
+    "build": "cross-env XDG_CONFIG_HOME=.wrangler/config XDG_CACHE_HOME=.wrangler/cache WRANGLER_WRITE_LOGS=false wrangler deploy --dry-run --outdir dist",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@skill-grill/shared": "workspace:*",
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260830.1",
+    "cross-env": "^10.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "skill-grill",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "dev": "pnpm --parallel --stream --filter @skill-grill/web --filter @skill-grill/api dev",
+    "build": "pnpm --filter './apps/*' build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
