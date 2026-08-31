@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type FormEvent } from "react"
+import { useMemo, useState, type FormEvent } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
@@ -8,7 +8,7 @@ import {
   ChevronRightIcon,
   MagnifyingGlassIcon,
 } from "@radix-ui/react-icons"
-import type { SkillListResponse } from "@skill-grill/shared"
+import type { SkillListQuery } from "@skill-grill/shared"
 
 import { SkillCard } from "@/components/skills/skill-card"
 import { SkillListSkeleton } from "@/components/skills/skill-list-skeleton"
@@ -23,12 +23,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { getApiBaseUrl, getApiError } from "@/lib/api"
 import {
   formatTagLabel,
   skillAgentOptions,
   skillTagOptions,
 } from "@/lib/skills"
+import { useSkillListQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
 
 export function SkillsBrowser() {
@@ -37,55 +37,24 @@ export function SkillsBrowser() {
   const searchParams = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "")
   const [searchIsDirty, setSearchIsDirty] = useState(false)
-  const [result, setResult] = useState<SkillListResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [retryToken, setRetryToken] = useState(0)
   const urlKey = searchParams.toString()
+  const query = useMemo<SkillListQuery>(() => {
+    const params = new URLSearchParams(urlKey)
+    const sort = params.get("sort")
+    const rawPage = Number(params.get("page") ?? "1")
 
-  useEffect(() => {
-    const controller = new AbortController()
-    const query = new URLSearchParams(urlKey)
-    const apiBaseUrl = getApiBaseUrl()
-
-    async function loadSkills() {
-      setResult(null)
-      setError(null)
-
-      if (!apiBaseUrl) {
-        setError("Set NEXT_PUBLIC_API_URL to the running Worker API, then try again.")
-        return
-      }
-
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/skills?${query.toString()}`, {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error(await getApiError(response))
-        }
-
-        const payload = (await response.json()) as SkillListResponse
-        if (!controller.signal.aborted) {
-          setResult(payload)
-        }
-      } catch (loadError) {
-        if (controller.signal.aborted) {
-          return
-        }
-
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Could not load skills. Please try again."
-        )
-      }
+    return {
+      q: params.get("q")?.trim() || undefined,
+      sort: sort === "score" || sort === "newest" ? sort : "popular",
+      tags: params.get("tags")?.split(",").filter(Boolean) ?? [],
+      agents: params.get("agents")?.split(",").filter(Boolean) ?? [],
+      page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1,
+      limit: 12,
     }
-
-    void loadSkills()
-
-    return () => controller.abort()
-  }, [retryToken, urlKey])
+  }, [urlKey])
+  const listQuery = useSkillListQuery(query)
+  const result = listQuery.data
+  const error = listQuery.error instanceof Error ? listQuery.error.message : null
 
   function updateUrl(updates: Record<string, string | null>) {
     const nextParams = new URLSearchParams(searchParams.toString())
@@ -115,14 +84,14 @@ export function SkillsBrowser() {
     router.replace(pathname, { scroll: false })
   }
 
-  const currentSort = searchParams.get("sort") ?? "popular"
-  const currentTag = searchParams.get("tags") ?? "all"
-  const currentAgent = searchParams.get("agents") ?? "all"
-  const currentPage = Number(searchParams.get("page") ?? "1") || 1
+  const currentSort = query.sort
+  const currentTag = query.tags[0] ?? "all"
+  const currentAgent = query.agents[0] ?? "all"
+  const currentPage = query.page
   const hasFilters = Boolean(
-    searchParams.get("q") ||
-      searchParams.get("tags") ||
-      searchParams.get("agents") ||
+    query.q ||
+      query.tags.length > 0 ||
+      query.agents.length > 0 ||
       currentSort !== "popular"
   )
 
@@ -242,7 +211,7 @@ export function SkillsBrowser() {
           ) : null}
         </div>
 
-        <div className="mt-2">
+        <div className="mt-2" aria-busy={listQuery.isFetching}>
           {error ? (
             <div className="border-t border-destructive/40 py-10" role="alert">
               <Badge variant="accent">Could not load</Badge>
@@ -250,7 +219,7 @@ export function SkillsBrowser() {
                 The directory is taking a breather.
               </h2>
               <p className="mt-2 max-w-[42ch] text-sm leading-6 text-muted-foreground">{error}</p>
-              <Button type="button" variant="outline" className="mt-6" onClick={() => setRetryToken((token) => token + 1)}>
+              <Button type="button" variant="outline" className="mt-6" onClick={() => void listQuery.refetch()}>
                 Try again
               </Button>
             </div>

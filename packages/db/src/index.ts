@@ -16,6 +16,7 @@ export function createDatabase(databaseUrl: string): DatabaseConnection {
   const client = postgres(databaseUrl, {
     prepare: false,
     max: 1,
+    connect_timeout: 5,
   })
 
   return {

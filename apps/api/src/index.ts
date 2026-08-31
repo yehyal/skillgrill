@@ -1,18 +1,27 @@
-import { createDatabase, skills } from "@skill-grill/db"
+import { createDatabase, skillVotes, skills } from "@skill-grill/db"
 import type {
   ApiErrorCode,
   HealthResponse,
   SkillDetailResponse,
   SkillListQuery,
   SkillListResponse,
+  SkillMeResponse,
+  SkillStatsResponse,
   SkillSort,
+  VoteRequest,
+  VoteResponse,
+  VoteValue,
 } from "@skill-grill/shared"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm"
 import { Hono, type Context } from "hono"
 import { cors } from "hono/cors"
+import { z } from "zod"
 
 type Bindings = {
   DATABASE_URL?: string
+  SUPABASE_PUBLISHABLE_KEY?: string
+  SUPABASE_URL?: string
   WEB_ORIGIN?: string
 }
 
@@ -20,13 +29,27 @@ type AppEnv = {
   Bindings: Bindings
 }
 
-type ErrorStatus = 400 | 404 | 500 | 503
+type ErrorStatus = 400 | 401 | 404 | 500 | 503
 
 const DEFAULT_LIMIT = 12
 const MAX_LIMIT = 50
+const voteRequestSchema = z
+  .object({
+    value: z.union([z.literal(1), z.literal(-1), z.null()]),
+  })
+  .strict()
 
-let cachedDatabase: ReturnType<typeof createDatabase> | null = null
-let cachedDatabaseUrl: string | null = null
+let cachedSupabase: SupabaseClient | null = null
+let cachedSupabaseConfig: string | null = null
+
+type VoteFunctionRow = {
+  skill_id: string
+  my_vote: number | null
+  upvotes_count: number
+  downvotes_count: number
+  comments_count: number
+  score: number
+}
 
 export const app = new Hono<AppEnv>()
 
@@ -43,7 +66,7 @@ app.use(
       return ""
     },
     allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "OPTIONS"],
+    allowMethods: ["GET", "PUT", "OPTIONS"],
     maxAge: 600,
   })
 )
@@ -114,6 +137,8 @@ app.get("/api/skills", async (context) => {
       "Skill discovery is temporarily unavailable. Please try again shortly.",
       503
     )
+  } finally {
+    await closeDatabase(database)
   }
 })
 
@@ -185,8 +210,284 @@ app.get("/api/skills/:slug", async (context) => {
       "Skill details are temporarily unavailable. Please try again shortly.",
       503
     )
+  } finally {
+    await closeDatabase(database)
   }
 })
+
+app.get("/api/skills/:slug/stats", async (context) => {
+  const database = getDatabase(context.env.DATABASE_URL)
+
+  if (!database) {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Skill statistics are temporarily unavailable because the database is not configured.",
+      503
+    )
+  }
+
+  try {
+    const rows = await database.db
+      .select({
+        skillId: skills.id,
+        upvotesCount: skills.upvotesCount,
+        downvotesCount: skills.downvotesCount,
+        commentsCount: skills.commentsCount,
+        score: skills.score,
+      })
+      .from(skills)
+      .where(and(eq(skills.slug, context.req.param("slug")), eq(skills.status, "active")))
+      .limit(1)
+
+    const skill = rows[0]
+
+    if (!skill) {
+      return jsonError(
+        context,
+        "skill_not_found",
+        "That skill does not exist or is no longer public.",
+        404
+      )
+    }
+
+    const response: SkillStatsResponse = {
+      data: {
+        ...skill,
+        score: skill.score ?? skill.upvotesCount - skill.downvotesCount,
+      },
+    }
+
+    context.header(
+      "Cache-Control",
+      "public, max-age=10, s-maxage=60, stale-while-revalidate=60"
+    )
+    return context.json(response)
+  } catch {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Skill statistics are temporarily unavailable. Please try again shortly.",
+      503
+    )
+  } finally {
+    await closeDatabase(database)
+  }
+})
+
+app.get("/api/skills/:slug/me", async (context) => {
+  context.header("Cache-Control", "private, no-store")
+  const userId = await getAuthenticatedUserId(context)
+
+  if (!userId) {
+    return jsonError(
+      context,
+      "unauthorized",
+      "A valid Supabase access token is required.",
+      401
+    )
+  }
+
+  const database = getDatabase(context.env.DATABASE_URL)
+
+  if (!database) {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Your vote state is temporarily unavailable because the database is not configured.",
+      503
+    )
+  }
+
+  try {
+    const rows = await database.db
+      .select({
+        skillId: skills.id,
+        value: skillVotes.value,
+      })
+      .from(skills)
+      .leftJoin(
+        skillVotes,
+        and(eq(skillVotes.skillId, skills.id), eq(skillVotes.userId, userId))
+      )
+      .where(and(eq(skills.slug, context.req.param("slug")), eq(skills.status, "active")))
+      .limit(1)
+
+    const row = rows[0]
+
+    if (!row) {
+      return jsonError(
+        context,
+        "skill_not_found",
+        "That skill does not exist or is no longer public.",
+        404
+      )
+    }
+
+    const response: SkillMeResponse = {
+      data: { myVote: normalizeVote(row.value) },
+    }
+
+    return context.json(response)
+  } catch {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Your vote state is temporarily unavailable. Please try again shortly.",
+      503
+    )
+  } finally {
+    await closeDatabase(database)
+  }
+})
+
+app.put("/api/skills/:slug/vote", async (context) => {
+  context.header("Cache-Control", "private, no-store")
+  const userId = await getAuthenticatedUserId(context)
+
+  if (!userId) {
+    return jsonError(
+      context,
+      "unauthorized",
+      "A valid Supabase access token is required.",
+      401
+    )
+  }
+
+  let payload: unknown
+
+  try {
+    payload = await context.req.json()
+  } catch {
+    return jsonError(
+      context,
+      "invalid_request",
+      "The request body must be valid JSON matching { value: 1 | -1 | null }.",
+      400
+    )
+  }
+
+  const parsed = voteRequestSchema.safeParse(payload)
+
+  if (!parsed.success) {
+    return jsonError(
+      context,
+      "invalid_request",
+      "The request body must be exactly { value: 1 | -1 | null }.",
+      400
+    )
+  }
+
+  const database = getDatabase(context.env.DATABASE_URL)
+
+  if (!database) {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Voting is temporarily unavailable because the database is not configured.",
+      503
+    )
+  }
+
+  try {
+    const request: VoteRequest = parsed.data
+    const rows = await database.db.execute<VoteFunctionRow>(sql`
+      select skill_id, my_vote, upvotes_count, downvotes_count, comments_count, score
+      from public.set_skill_vote(
+        ${context.req.param("slug")},
+        ${userId}::uuid,
+        ${request.value}::smallint
+      )
+    `)
+    const vote = rows[0]
+
+    if (!vote) {
+      return jsonError(
+        context,
+        "skill_not_found",
+        "That skill does not exist or is no longer public.",
+        404
+      )
+    }
+
+    const response: VoteResponse = {
+      data: {
+        skillId: vote.skill_id,
+        myVote: normalizeVote(vote.my_vote),
+        upvotesCount: vote.upvotes_count,
+        downvotesCount: vote.downvotes_count,
+        commentsCount: vote.comments_count,
+        score: vote.score,
+      },
+    }
+
+    return context.json(response)
+  } catch {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Voting is temporarily unavailable. Please try again shortly.",
+      503
+    )
+  } finally {
+    await closeDatabase(database)
+  }
+})
+
+function getSupabaseClient(bindings: Bindings) {
+  const url = bindings.SUPABASE_URL
+  const key = bindings.SUPABASE_PUBLISHABLE_KEY
+
+  if (!url || !key) {
+    return null
+  }
+
+  const config = `${url}:${key}`
+
+  if (!cachedSupabase || cachedSupabaseConfig !== config) {
+    cachedSupabase = createClient(url, key, {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+    })
+    cachedSupabaseConfig = config
+  }
+
+  return cachedSupabase
+}
+
+async function getAuthenticatedUserId(context: Context<AppEnv>) {
+  const token = context.req.header("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]
+
+  if (!token) {
+    return null
+  }
+
+  const client = getSupabaseClient(context.env)
+
+  if (!client) {
+    return null
+  }
+
+  try {
+    const { data, error } = await client.auth.getClaims(token)
+    const subject = data?.claims?.sub
+
+    if (error || typeof subject !== "string" || subject.length === 0) {
+      return null
+    }
+
+    return subject
+  } catch {
+    return null
+  }
+}
+
+function normalizeVote(value: number | null | undefined): VoteValue {
+  return value === 1 || value === -1 ? value : null
+}
 
 function getDatabase(databaseUrl: string | undefined) {
   if (!databaseUrl) {
@@ -194,14 +495,19 @@ function getDatabase(databaseUrl: string | undefined) {
   }
 
   try {
-    if (!cachedDatabase || cachedDatabaseUrl !== databaseUrl) {
-      cachedDatabase = createDatabase(databaseUrl)
-      cachedDatabaseUrl = databaseUrl
-    }
-
-    return cachedDatabase
+    // Keep Postgres.js connections request-scoped in Workers. Reusing a client
+    // across requests can carry request-bound socket promises into the next request.
+    return createDatabase(databaseUrl)
   } catch {
     return null
+  }
+}
+
+async function closeDatabase(database: ReturnType<typeof createDatabase>) {
+  try {
+    await database.client.end({ timeout: 2 })
+  } catch {
+    // The request has already completed; a failed cleanup must not mask it.
   }
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import {
@@ -9,7 +9,7 @@ import {
   ClipboardIcon,
   ExternalLinkIcon,
 } from "@radix-ui/react-icons"
-import type { SkillDetailResponse } from "@skill-grill/shared"
+import type { SkillDetailResponse, SkillStats } from "@skill-grill/shared"
 
 import { AppFooter } from "@/components/app-footer"
 import { AppHeader } from "@/components/app-header"
@@ -17,72 +17,22 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getApiBaseUrl, getApiError } from "@/lib/api"
 import { formatAgentLabel, formatSkillDate, formatTagLabel } from "@/lib/skills"
+import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
-
-type DetailError = {
-  kind: "not-found" | "error"
-  message: string
-}
+import { ApiRequestError } from "@/lib/api"
+import { SkillVoteBox } from "@/components/skills/skill-vote-box"
 
 export function SkillDetail() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug
-  const [result, setResult] = useState<SkillDetailResponse | null>(null)
-  const [error, setError] = useState<DetailError | null>(null)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    const apiBaseUrl = getApiBaseUrl()
-
-    async function loadSkill() {
-      setResult(null)
-      setError(null)
-
-      if (!apiBaseUrl || !slug) {
-        setError({
-          kind: "error",
-          message: apiBaseUrl
-            ? "This skill route is missing a slug."
-            : "Set NEXT_PUBLIC_API_URL to the running Worker API, then try again.",
-        })
-        return
-      }
-
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/skills/${encodeURIComponent(slug)}`, {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw Object.assign(new Error(await getApiError(response)), {
-            status: response.status,
-          })
-        }
-
-        const payload = (await response.json()) as SkillDetailResponse
-        if (!controller.signal.aborted) {
-          setResult(payload)
-        }
-      } catch (loadError) {
-        if (controller.signal.aborted) {
-          return
-        }
-
-        const status = loadError instanceof Error && "status" in loadError ? loadError.status : undefined
-        setError({
-          kind: status === 404 ? "not-found" : "error",
-          message: loadError instanceof Error ? loadError.message : "Could not load this skill.",
-        })
-      }
-    }
-
-    void loadSkill()
-
-    return () => controller.abort()
-  }, [slug])
+  const detailQuery = useSkillDetailQuery(slug)
+  const statsQuery = useSkillStatsQuery(slug)
+  const result = detailQuery.data
+  const error = detailQuery.error
+  const errorKind = error instanceof ApiRequestError && error.status === 404 ? "not-found" : "error"
+  const stats = statsQuery.data?.data ?? result?.data
 
   async function copyInstallCommand(command: string) {
     try {
@@ -107,10 +57,10 @@ export function SkillDetail() {
           {error ? (
             <div className="mt-16 max-w-2xl border-t border-border py-10" role="alert">
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
-                {error.kind === "not-found" ? "Skill not found" : "Could not load"}
+                {errorKind === "not-found" ? "Skill not found" : "Could not load"}
               </p>
               <h1 className="mt-4 text-4xl font-semibold tracking-[-0.065em]">
-                {error.kind === "not-found" ? "That skill is not public." : "The skill page is taking a breather."}
+                {errorKind === "not-found" ? "That skill is not public." : "The skill page is taking a breather."}
               </h1>
               <p className="mt-4 max-w-[42ch] text-sm leading-6 text-muted-foreground">{error.message}</p>
               <Button asChild variant="outline" className="mt-7">
@@ -118,7 +68,13 @@ export function SkillDetail() {
               </Button>
             </div>
           ) : result ? (
-            <SkillDetailContent result={result} copied={copied} onCopy={copyInstallCommand} />
+            <SkillDetailContent
+              result={result}
+              stats={stats ?? result.data}
+              statsIsPending={statsQuery.isPending}
+              copied={copied}
+              onCopy={copyInstallCommand}
+            />
           ) : (
             <SkillDetailSkeleton />
           )}
@@ -131,10 +87,14 @@ export function SkillDetail() {
 
 function SkillDetailContent({
   result,
+  stats,
+  statsIsPending,
   copied,
   onCopy,
 }: {
   result: SkillDetailResponse
+  stats: SkillStats
+  statsIsPending: boolean
   copied: boolean
   onCopy: (command: string) => void
 }) {
@@ -216,34 +176,7 @@ function SkillDetailContent({
           </section>
         </div>
 
-        <aside className="h-fit rounded-md border border-border bg-card p-5" aria-labelledby="community-title">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">Community pulse</p>
-          <h2 id="community-title" className="mt-3 text-xl font-semibold tracking-[-0.04em]">
-            Early signal
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            These counters are read-only while community voting and comments are being built.
-          </p>
-          <Separator className="my-5" />
-          <dl className="grid gap-4 text-sm">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Score</dt>
-              <dd className="font-semibold tabular-nums">{skill.score}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Upvotes</dt>
-              <dd className="font-semibold tabular-nums">{skill.upvotesCount}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Downvotes</dt>
-              <dd className="font-semibold tabular-nums">{skill.downvotesCount}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Comments</dt>
-              <dd className="font-semibold tabular-nums">{skill.commentsCount}</dd>
-            </div>
-          </dl>
-        </aside>
+        <SkillVoteBox slug={skill.slug} stats={stats} statsIsPending={statsIsPending} />
       </div>
     </>
   )

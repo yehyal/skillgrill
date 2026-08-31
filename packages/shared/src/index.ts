@@ -50,6 +50,28 @@ export type SkillStats = {
   score: number
 }
 
+export type VoteValue = 1 | -1 | null
+
+export type SkillMeState = {
+  myVote: VoteValue
+}
+
+export type VoteRequest = {
+  value: VoteValue
+}
+
+export type SkillStatsResponse = {
+  data: SkillStats
+}
+
+export type SkillMeResponse = {
+  data: SkillMeState
+}
+
+export type VoteResponse = {
+  data: SkillStats & SkillMeState
+}
+
 export type PaginationMeta = {
   page: number
   limit: number
@@ -69,7 +91,9 @@ export type SkillDetailResponse = {
 export type ApiErrorCode =
   | "database_unavailable"
   | "invalid_query"
+  | "invalid_request"
   | "skill_not_found"
+  | "unauthorized"
   | "internal_error"
 
 export type ApiError = {

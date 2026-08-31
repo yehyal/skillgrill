@@ -4,8 +4,8 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-08-30",
   "vars": {
-    "WEB_ORIGIN": "http://localhost:3000",
+    "WEB_ORIGIN": "http://localhost:3000"
   }
-  // DATABASE_URL is server-only. Set it with `wrangler secret put DATABASE_URL`
-  // using the Supabase transaction pooler URL and keep prepared statements disabled.
+  // Set DATABASE_URL, SUPABASE_URL, and SUPABASE_PUBLISHABLE_KEY in apps/api/.dev.vars locally.
+  // For deployed Workers, use Wrangler secrets for DATABASE_URL and the Supabase credentials.
 }

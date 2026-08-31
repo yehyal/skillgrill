@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 
+import { QueryProvider } from "@/components/query-provider"
 import { AuthProvider } from "@/lib/auth/auth-provider"
 
 import "./globals.css"
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={GeistSans.variable}>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <QueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   )

@@ -48,12 +48,22 @@ GitHub OAuth uses two different callback settings:
 
 If the public values are missing, the app stays usable as a guest and shows an unavailable sign-in state.
 
-The Worker reads `DATABASE_URL` server-side only. Use the Supabase transaction pooler URL and keep prepared statements disabled, as configured by the Drizzle connection helper. Set the Worker origin in `apps/api/wrangler.jsonc` or override it with `WEB_ORIGIN`.
+The Worker reads `DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY` server-side only. Use the Supabase transaction pooler URL and keep prepared statements disabled, as configured by the Drizzle connection helper. Set the Worker origin in `apps/api/wrangler.jsonc` or override it with `WEB_ORIGIN`.
 
-Before starting the API with database-backed skill routes, configure the Worker secret:
+For local Worker development, copy the environment template and fill in the hosted Supabase values:
+
+```sh
+cp apps/api/.dev.vars.example apps/api/.dev.vars
+```
+
+Keep `apps/api/.dev.vars` uncommitted. The web app still needs the public Supabase URL and publishable key in `apps/web/.env.local` so it can start the GitHub OAuth flow; the Worker copy is used only to verify bearer tokens and reach the database.
+
+For a deployed Worker, configure the values as Wrangler secrets:
 
 ```sh
 wrangler secret put DATABASE_URL
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_PUBLISHABLE_KEY
 ```
 
 ## Commands
@@ -79,6 +89,6 @@ The API health check is available at `GET http://localhost:8787/health` and retu
 
 ## Foundation boundary
 
-Milestone 2 adds the Drizzle database package, unapplied migrations, the idempotent 20-skill seed, public Worker discovery routes, and client-loaded `/skills` and `/skills/[slug]` surfaces. Required shadcn/ui files are copied from the linked component source rather than installed through the shadcn CLI. Voting, comments, reports, and other mutation APIs remain deferred.
+Milestone 2 added the Drizzle database package, unapplied migrations, the idempotent 20-skill seed, public Worker discovery routes, and client-loaded `/skills` and `/skills/[slug]` surfaces. Milestone 3 adds TanStack Query, public statistics, and authenticated transactional voting. Comments, reports, and other mutation APIs remain deferred. Required shadcn/ui files are copied from the linked component source rather than installed through the shadcn CLI.
 
 See [Product.md](./Product.md) for the product and MVP specification.
