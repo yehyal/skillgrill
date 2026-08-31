@@ -9,6 +9,10 @@
   "scripts": {
     "dev": "pnpm --parallel --stream --filter @skill-grill/web --filter @skill-grill/api dev",
     "build": "pnpm --filter './apps/*' build",
+    "db:generate": "pnpm --filter @skill-grill/db generate",
+    "db:migrate": "pnpm --filter @skill-grill/db migrate",
+    "db:seed": "pnpm --filter @skill-grill/db seed",
+    "db:studio": "pnpm --filter @skill-grill/db studio",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",

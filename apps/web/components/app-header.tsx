@@ -89,9 +89,15 @@ export function AppHeader() {
         </Link>
 
         <div className="flex min-w-0 items-center gap-4">
-          <span className="hidden text-sm text-muted-foreground sm:inline">
-            Community skill reviews
-          </span>
+          <nav aria-label="Primary navigation" className="flex items-center gap-3 sm:gap-5">
+            <Link
+              href="/skills"
+              className="rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <span className="sm:hidden">Browse</span>
+              <span className="hidden sm:inline">Browse skills</span>
+            </Link>
+          </nav>
 
           {status === "loading" ? (
             <AuthSkeleton />

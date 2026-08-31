@@ -1,6 +1,8 @@
 import { AppFooter } from "@/components/app-footer"
 import { AppHeader } from "@/components/app-header"
 import { PageContainer } from "@/components/page-container"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Home() {
   return (
@@ -19,6 +21,9 @@ export default function Home() {
               <p className="mt-8 max-w-[32rem] text-[clamp(1rem,1.5vw,1.25rem)] leading-[1.55] text-muted-foreground md:mt-12">
                 Community votes, comments, and practical feedback for agent skills.
               </p>
+              <Button asChild size="lg" className="mt-8 md:mt-10">
+                <Link href="/skills">Browse Skills</Link>
+              </Button>
             </div>
 
             <div

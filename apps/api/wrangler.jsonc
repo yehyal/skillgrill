@@ -2,5 +2,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "skill-grill-api",
   "main": "src/index.ts",
-  "compatibility_date": "2026-08-30"
+  "compatibility_date": "2026-08-30",
+  "vars": {
+    "WEB_ORIGIN": "http://localhost:3000",
+  }
+  // DATABASE_URL is server-only. Set it with `wrangler secret put DATABASE_URL`
+  // using the Supabase transaction pooler URL and keep prepared statements disabled.
 }
