@@ -40,6 +40,14 @@ const DEFAULT_LIMIT = 12
 const MAX_LIMIT = 50
 const DEFAULT_COMMENT_LIMIT = 20
 const MAX_COMMENT_LIMIT = 50
+const CACHE_CONTROL = {
+  noStore: "no-store",
+  private: "private, no-store",
+  skillList: "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+  skillDetail: "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+  stats: "public, max-age=10, s-maxage=60, stale-while-revalidate=60",
+  comments: "public, max-age=30, s-maxage=60, stale-while-revalidate=60",
+} as const
 const voteRequestSchema = z
   .object({
     value: z.union([z.literal(1), z.literal(-1), z.null()]),
@@ -105,6 +113,24 @@ type ReportFunctionRow = {
 
 export const app = new Hono<AppEnv>()
 
+app.use("*", async (context, next) => {
+  const hasAuthorizationHeader = Boolean(context.req.header("Authorization"))
+
+  if (hasAuthorizationHeader) {
+    context.header("Cache-Control", CACHE_CONTROL.private)
+  }
+
+  try {
+    await next()
+  } finally {
+    if (hasAuthorizationHeader) {
+      context.header("Cache-Control", CACHE_CONTROL.private)
+    } else if (!context.res.headers.has("Cache-Control")) {
+      context.header("Cache-Control", CACHE_CONTROL.noStore)
+    }
+  }
+})
+
 app.use(
   "*",
   cors({
@@ -124,13 +150,14 @@ app.use(
 )
 
 app.get("/health", (context) => {
+  context.header("Cache-Control", CACHE_CONTROL.noStore)
   const response: HealthResponse = { ok: true }
 
   return context.json(response)
 })
 
 app.post("/api/comments/:commentId/report", async (context) => {
-  context.header("Cache-Control", "private, no-store")
+  context.header("Cache-Control", CACHE_CONTROL.private)
   const userId = await getAuthenticatedUserId(context)
 
   if (!userId) {
@@ -290,10 +317,7 @@ app.get("/api/skills", async (context) => {
       },
     }
 
-    context.header(
-      "Cache-Control",
-      "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
-    )
+    context.header("Cache-Control", CACHE_CONTROL.skillList)
     return context.json(response)
   } catch {
     return jsonError(
@@ -363,10 +387,7 @@ app.get("/api/skills/:slug", async (context) => {
       },
     }
 
-    context.header(
-      "Cache-Control",
-      "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600"
-    )
+    context.header("Cache-Control", CACHE_CONTROL.skillDetail)
     return context.json(response)
   } catch {
     return jsonError(
@@ -423,10 +444,7 @@ app.get("/api/skills/:slug/stats", async (context) => {
       },
     }
 
-    context.header(
-      "Cache-Control",
-      "public, max-age=10, s-maxage=60, stale-while-revalidate=60"
-    )
+    context.header("Cache-Control", CACHE_CONTROL.stats)
     return context.json(response)
   } catch {
     return jsonError(
@@ -528,10 +546,7 @@ app.get("/api/skills/:slug/comments", async (context) => {
           : null,
     }
 
-    context.header(
-      "Cache-Control",
-      "public, max-age=30, s-maxage=60, stale-while-revalidate=60"
-    )
+    context.header("Cache-Control", CACHE_CONTROL.comments)
     return context.json(response)
   } catch {
     return jsonError(
@@ -546,7 +561,7 @@ app.get("/api/skills/:slug/comments", async (context) => {
 })
 
 app.post("/api/skills/:slug/comments", async (context) => {
-  context.header("Cache-Control", "private, no-store")
+  context.header("Cache-Control", CACHE_CONTROL.private)
   const userId = await getAuthenticatedUserId(context)
 
   if (!userId) {
@@ -666,7 +681,7 @@ app.post("/api/skills/:slug/comments", async (context) => {
 })
 
 app.get("/api/skills/:slug/me", async (context) => {
-  context.header("Cache-Control", "private, no-store")
+  context.header("Cache-Control", CACHE_CONTROL.private)
   const userId = await getAuthenticatedUserId(context)
 
   if (!userId) {
@@ -732,7 +747,7 @@ app.get("/api/skills/:slug/me", async (context) => {
 })
 
 app.put("/api/skills/:slug/vote", async (context) => {
-  context.header("Cache-Control", "private, no-store")
+  context.header("Cache-Control", CACHE_CONTROL.private)
   const userId = await getAuthenticatedUserId(context)
 
   if (!userId) {
@@ -1163,6 +1178,7 @@ function jsonError(
   message: string,
   status: ErrorStatus
 ) {
+  context.header("Cache-Control", CACHE_CONTROL.noStore)
   return context.json({ error: { code, message } }, status)
 }
 

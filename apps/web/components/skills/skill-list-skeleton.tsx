@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export function SkillListSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Loading skills">
+    <div className="grid grid-cols-1 gap-x-8 gap-y-2 md:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Loading skills">
       {Array.from({ length: 6 }, (_, index) => (
         <div key={index} className="min-h-64 border-t border-border py-6">
           <div className="flex justify-between">

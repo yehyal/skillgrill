@@ -81,6 +81,19 @@ pnpm build      # Build both apps
 pnpm check      # Run all verification commands
 ```
 
+## API cache policy
+
+Public reads are explicitly cacheable at the browser and edge. Authenticated requests, health checks, errors, unmatched routes, and responses without an endpoint policy are never stored.
+
+| Endpoint | Cache-Control |
+| --- | --- |
+| `GET /api/skills` | `public, max-age=60, s-maxage=300, stale-while-revalidate=600` |
+| `GET /api/skills/:slug` | `public, max-age=300, s-maxage=1800, stale-while-revalidate=3600` |
+| `GET /api/skills/:slug/stats` | `public, max-age=10, s-maxage=60, stale-while-revalidate=60` |
+| `GET /api/skills/:slug/comments` | `public, max-age=30, s-maxage=60, stale-while-revalidate=60` |
+| Authenticated reads and mutations | `private, no-store` |
+| Health, errors, and unmatched routes | `no-store` |
+
 ## Local verification
 
 With the environment configured, run `pnpm dev`, open `http://localhost:3000`, and verify the initial loading state, guest header, GitHub consent, callback return, refreshed session, avatar fallback, local sign-out, and restored guest state. Without credentials, run `pnpm check` and verify the unavailable sign-in state plus the credential-free web tests.

@@ -20,6 +20,7 @@ import {
   type OptimisticCommentItem,
 } from "@/lib/skill-queries"
 import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 const MAX_COMMENT_LENGTH = 2000
 const MAX_REPORT_NOTE_LENGTH = 500
@@ -105,6 +106,10 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
       body: trimmedBody,
       author,
       baseStats: stats,
+    }, {
+      onSuccess: () => {
+        toast.success("Comment posted")
+      },
     })
     setBody("")
   }
@@ -122,6 +127,10 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
       body: comment.body,
       author,
       baseStats: stats,
+    }, {
+      onSuccess: () => {
+        toast.success("Comment posted")
+      },
     })
   }
 
@@ -222,12 +231,6 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             </Button>
           </div>
         )}
-
-        {commentMutation.error ? (
-          <p className="mt-4 text-sm text-destructive" role="alert">
-            Your comment could not be posted. You can retry it below.
-          </p>
-        ) : null}
 
         {commentsQuery.isPending ? (
           <CommentListSkeleton />
@@ -455,6 +458,7 @@ function ReportCommentDialog({
         reason,
         ...(trimmedNote ? { note: trimmedNote } : {}),
       })
+      toast.success("Report submitted")
       onReported(session.user.id)
       setShowDialog(false)
     } catch (reportError) {
@@ -489,7 +493,7 @@ function ReportCommentDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         aria-modal="true"
-        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20 sm:w-[calc(100%-2rem)]"
         onClose={() => setShowDialog(false)}
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -497,7 +501,7 @@ function ReportCommentDialog({
           }
         }}
       >
-        <div className="p-6">
+        <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-6">
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">

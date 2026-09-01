@@ -11,8 +11,6 @@ import {
 } from "@radix-ui/react-icons"
 import type { SkillDetailResponse, SkillStats } from "@skill-grill/shared"
 
-import { AppFooter } from "@/components/app-footer"
-import { AppHeader } from "@/components/app-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -23,6 +21,7 @@ import { PageContainer } from "@/components/page-container"
 import { ApiRequestError } from "@/lib/api"
 import { SkillComments } from "@/components/skills/skill-comments"
 import { SkillVoteBox } from "@/components/skills/skill-vote-box"
+import { toast } from "sonner"
 
 export function SkillDetail() {
   const params = useParams<{ slug: string }>()
@@ -39,16 +38,18 @@ export function SkillDetail() {
     try {
       await navigator.clipboard.writeText(command)
       setCopied(true)
+      toast.success("Install command copied")
       window.setTimeout(() => setCopied(false), 1800)
     } catch {
       setCopied(false)
+      toast.error("Could not copy install command", {
+        description: "Your browser did not grant clipboard access.",
+      })
     }
   }
 
   return (
-    <div className="site-shell">
-      <AppHeader />
-      <main id="main-content" className="flex-1">
+    <main id="main-content" className="flex-1">
         <PageContainer className="py-12 sm:py-16 lg:py-20">
           <Link href="/skills" className="inline-flex items-center gap-2 rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50">
             <ArrowLeftIcon aria-hidden="true" />
@@ -64,9 +65,16 @@ export function SkillDetail() {
                 {errorKind === "not-found" ? "That skill is not public." : "The skill page is taking a breather."}
               </h1>
               <p className="mt-4 max-w-[42ch] text-sm leading-6 text-muted-foreground">{error.message}</p>
-              <Button asChild variant="outline" className="mt-7">
-                <Link href="/skills">Return to the directory</Link>
-              </Button>
+              <div className="mt-7 flex flex-wrap gap-3">
+                {errorKind === "error" ? (
+                  <Button type="button" onClick={() => void detailQuery.refetch()}>
+                    Try again
+                  </Button>
+                ) : null}
+                <Button asChild variant="outline">
+                  <Link href="/skills">Return to the directory</Link>
+                </Button>
+              </div>
             </div>
           ) : result ? (
             <SkillDetailContent
@@ -80,9 +88,7 @@ export function SkillDetail() {
             <SkillDetailSkeleton />
           )}
         </PageContainer>
-      </main>
-      <AppFooter />
-    </div>
+    </main>
   )
 }
 
@@ -115,11 +121,11 @@ function SkillDetailContent({
           {skill.name}
         </h1>
         <p className="mt-6 max-w-[58ch] text-lg leading-8 text-muted-foreground">{skill.description}</p>
-        <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-          <span>
+        <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-x-3">
             Works with {skill.supportedAgents.map(formatAgentLabel).join(", ")}
+            <span aria-hidden="true">·</span>
           </span>
-          <span aria-hidden="true">·</span>
           <span>Added {formatSkillDate(skill.createdAt)}</span>
         </div>
       </header>
@@ -134,11 +140,11 @@ function SkillDetailContent({
               Install this skill
             </h2>
             {skill.installCommand ? (
-              <div className="mt-5 flex items-center gap-3 rounded-md border border-border bg-card p-3">
-                <code className="min-w-0 flex-1 overflow-x-auto px-1 text-sm text-foreground">
+              <div className="mt-5 flex flex-col items-stretch gap-3 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center">
+                <code className="block min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-1 text-sm text-foreground">
                   {skill.installCommand}
                 </code>
-                <Button type="button" size="sm" variant="outline" onClick={() => onCopy(skill.installCommand!)}>
+                <Button type="button" size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => onCopy(skill.installCommand!)}>
                   <ClipboardIcon aria-hidden="true" />
                   {copied ? "Copied" : "Copy"}
                 </Button>
@@ -185,7 +191,7 @@ function SkillDetailContent({
   )
 }
 
-function SkillDetailSkeleton() {
+export function SkillDetailSkeleton() {
   return (
     <div className="mt-16" role="status" aria-label="Loading skill details">
       <Skeleton className="h-5 w-28" />

@@ -1,15 +1,13 @@
 import { Suspense } from "react"
 
-import { AppFooter } from "@/components/app-footer"
-import { AppHeader } from "@/components/app-header"
 import { SkillListSkeleton } from "@/components/skills/skill-list-skeleton"
 import { SkillsBrowser } from "@/components/skills/skills-browser"
 import { PageContainer } from "@/components/page-container"
+import { SiteShell } from "@/components/site-shell"
 
 export default function SkillsPage() {
   return (
-    <div className="site-shell">
-      <AppHeader />
+    <SiteShell>
       <Suspense
         fallback={
           <main id="main-content" className="flex-1">
@@ -24,7 +22,6 @@ export default function SkillsPage() {
       >
         <SkillsBrowser />
       </Suspense>
-      <AppFooter />
-    </div>
+    </SiteShell>
   )
 }

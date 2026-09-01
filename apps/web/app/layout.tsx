@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
+import { Toaster } from "sonner"
 
 import { QueryProvider } from "@/components/query-provider"
 import { AuthProvider } from "@/lib/auth/auth-provider"
@@ -20,7 +21,20 @@ export default function RootLayout({
     <html lang="en" className={GeistSans.variable}>
       <body>
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster
+              theme="system"
+              position="bottom-right"
+              closeButton
+              toastOptions={{
+                classNames: {
+                  toast: "border-border bg-card text-card-foreground",
+                  description: "text-muted-foreground",
+                },
+              }}
+            />
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

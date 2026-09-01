@@ -17,6 +17,7 @@ import { getGitHubIdentity } from "@/lib/auth/identity"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { cn } from "@/lib/utils"
 import { PageContainer } from "@/components/page-container"
+import { toast } from "sonner"
 
 function AuthSkeleton() {
   return (
@@ -61,21 +62,35 @@ export function AppHeader() {
   async function handleSignOut() {
     setActionError(null)
     setIsSigningOut(true)
-    const result = await signOut()
 
-    if (result.error) {
-      setActionError(`Sign-out failed. ${result.error.message}`)
+    try {
+      const result = await signOut()
+
+      if (result.error) {
+        toast.error("Sign-out failed", {
+          description: result.error.message,
+        })
+      } else {
+        toast.success("Signed out")
+      }
+    } catch (signOutError) {
+      toast.error("Sign-out failed", {
+        description:
+          signOutError instanceof Error
+            ? signOutError.message
+            : "Please try again.",
+      })
+    } finally {
+      setIsSigningOut(false)
     }
-
-    setIsSigningOut(false)
   }
 
   return (
     <header className="border-b border-border">
-      <PageContainer className="flex min-h-[4.5rem] items-center justify-between gap-4">
+      <PageContainer className="flex min-h-[4.5rem] items-center justify-between gap-2 sm:gap-4">
         <Link
           href="/"
-          className="flex min-w-0 items-center gap-3 rounded-sm text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="flex min-w-0 items-center gap-2 rounded-sm text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:gap-3"
         >
           <span
             className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-xs font-bold tracking-[-0.08em] text-primary-foreground"
@@ -83,13 +98,13 @@ export function AppHeader() {
           >
             SG
           </span>
-          <span className="truncate text-[0.9375rem] font-semibold tracking-[-0.03em]">
+          <span className="hidden truncate text-[0.9375rem] font-semibold tracking-[-0.03em] sm:inline">
             Skill Grill
           </span>
         </Link>
 
-        <div className="flex min-w-0 items-center gap-4">
-          <nav aria-label="Primary navigation" className="flex items-center gap-3 sm:gap-5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-5">
             <Link
               href="/skills"
               className="rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -140,11 +155,22 @@ export function AppHeader() {
               disabled={status === "unavailable" || isSigningIn}
               aria-describedby={errorMessage ? "auth-message" : undefined}
             >
-              {status === "unavailable"
-                ? "GitHub sign-in unavailable"
-                : isSigningIn
-                  ? "Opening GitHub..."
-                  : "Sign in with GitHub"}
+              {status === "unavailable" ? (
+                <>
+                  <span className="sm:hidden">Unavailable</span>
+                  <span className="hidden sm:inline">GitHub sign-in unavailable</span>
+                </>
+              ) : isSigningIn ? (
+                <>
+                  <span className="sm:hidden">Opening…</span>
+                  <span className="hidden sm:inline">Opening GitHub...</span>
+                </>
+              ) : (
+                <>
+                  <span className="sm:hidden">Sign in</span>
+                  <span className="hidden sm:inline">Sign in with GitHub</span>
+                </>
+              )}
             </Button>
           )}
         </div>

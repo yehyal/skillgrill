@@ -15,7 +15,7 @@ export function SkillCard({ skill, index }: { skill: SkillListItem; index: numbe
     <article className="group flex min-h-64 flex-col border-t border-border py-6">
       <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
         <span className="font-mono tabular-nums">{String(index + 1).padStart(2, "0")}</span>
-        <span className="truncate">{skill.supportedAgents.map(formatAgentLabel).join(" · ")}</span>
+        <span className="max-w-[12rem] truncate text-right">{skill.supportedAgents.map(formatAgentLabel).join(" · ")}</span>
       </div>
 
       <Link

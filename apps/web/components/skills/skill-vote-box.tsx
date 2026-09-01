@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { useSkillMeQuery, useSkillVoteMutation } from "@/lib/skill-queries"
+import { toast } from "sonner"
 
 export function SkillVoteBox({
   slug,
@@ -55,12 +56,23 @@ export function SkillVoteBox({
     }
 
     setShowSignIn(false)
+    const nextVote = myVote === value ? null : value
+
     voteMutation.mutate({
       slug,
       userId: session.user.id,
       accessToken: session.access_token,
-      value: myVote === value ? null : value,
+      value: nextVote,
       baseStats: stats,
+    }, {
+      onSuccess: () => {
+        toast.success(nextVote === null ? "Vote removed" : "Vote saved")
+      },
+      onError: () => {
+        toast.error("Vote rolled back", {
+          description: "Your vote could not be saved. Try again when the API is available.",
+        })
+      },
     })
   }
 
@@ -136,12 +148,6 @@ export function SkillVoteBox({
         </div>
       ) : null}
 
-      {voteMutation.error ? (
-        <p className="mt-4 text-sm text-destructive" role="alert">
-          {voteMutation.error.message}
-        </p>
-      ) : null}
-
       <Separator className="my-5" />
       <dl className="grid gap-4 text-sm">
         <div className="flex items-center justify-between gap-4">
@@ -174,7 +180,7 @@ export function SkillVoteBox({
         aria-labelledby="sign-in-title"
         aria-describedby="sign-in-description"
         aria-modal="true"
-        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20 sm:w-[calc(100%-2rem)]"
         onClose={() => setShowSignIn(false)}
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -182,7 +188,7 @@ export function SkillVoteBox({
           }
         }}
       >
-        <div className="p-6">
+        <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-6">
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">

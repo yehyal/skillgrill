@@ -1,5 +1,10 @@
 import { SkillDetail } from "@/components/skills/skill-detail"
+import { SiteShell } from "@/components/site-shell"
 
 export default function SkillDetailPage() {
-  return <SkillDetail />
+  return (
+    <SiteShell>
+      <SkillDetail />
+    </SiteShell>
+  )
 }

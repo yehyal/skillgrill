@@ -112,9 +112,9 @@ export function SkillsBrowser() {
           </p>
         </div>
 
-        <Separator className="my-10" />
+        <Separator className="my-8 sm:my-10" />
 
-        <section aria-labelledby="discovery-controls" className="rounded-md border border-border bg-card p-4 sm:p-5">
+        <section aria-labelledby="discovery-controls" className="rounded-md border border-border bg-card p-3 sm:p-5">
           <h2 id="discovery-controls" className="sr-only">
             Search and filter skills
           </h2>
@@ -135,7 +135,7 @@ export function SkillsBrowser() {
                 />
               </span>
             </label>
-            <Button type="submit" className="sm:px-5">
+            <Button type="submit" className="w-full sm:w-auto sm:px-5">
               Search
             </Button>
           </form>
@@ -191,7 +191,7 @@ export function SkillsBrowser() {
           </div>
         </section>
 
-        <div className="mt-10 flex min-h-6 items-center justify-between gap-4">
+        <div className="mt-8 flex min-h-6 items-center justify-between gap-3 sm:mt-10">
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {result ? (
               <>
@@ -226,22 +226,22 @@ export function SkillsBrowser() {
           ) : result ? (
             result.data.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-2 md:grid-cols-2 xl:grid-cols-3">
                   {result.data.map((skill, index) => (
                     <SkillCard key={skill.id} skill={skill} index={(currentPage - 1) * result.pagination.limit + index} />
                   ))}
                 </div>
                 {result.pagination.totalPages > 1 ? (
-                  <nav className="mt-12 flex items-center justify-between border-t border-border pt-5" aria-label="Skill pages">
-                    <Button type="button" variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => updateUrl({ page: String(currentPage - 1) })}>
+                  <nav className="mt-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-t border-border pt-5 sm:mt-12 sm:gap-4" aria-label="Skill pages">
+                    <Button type="button" variant="outline" size="sm" aria-label="Go to previous skill page" disabled={currentPage <= 1} onClick={() => updateUrl({ page: String(currentPage - 1) })}>
                       <ChevronLeftIcon aria-hidden="true" />
-                      Previous
+                      <span className="sr-only sm:not-sr-only">Previous</span>
                     </Button>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="min-w-0 text-center text-xs text-muted-foreground">
                       Page <span className="font-medium text-foreground">{currentPage}</span> of {result.pagination.totalPages}
                     </span>
-                    <Button type="button" variant="outline" size="sm" disabled={currentPage >= result.pagination.totalPages} onClick={() => updateUrl({ page: String(currentPage + 1) })}>
-                      Next
+                    <Button type="button" variant="outline" size="sm" aria-label="Go to next skill page" disabled={currentPage >= result.pagination.totalPages} onClick={() => updateUrl({ page: String(currentPage + 1) })}>
+                      <span className="sr-only sm:not-sr-only">Next</span>
                       <ChevronRightIcon aria-hidden="true" />
                     </Button>
                   </nav>

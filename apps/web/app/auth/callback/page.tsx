@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
+import { SiteShell } from "@/components/site-shell"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { sanitizeRedirectPath } from "@/lib/auth/redirect"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
@@ -13,11 +14,13 @@ type CallbackState = "checking" | "error"
 
 function CallbackFallback() {
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center px-4 py-12">
-      <p className="text-sm text-muted-foreground" role="status">
-        Finishing GitHub sign-in...
-      </p>
-    </main>
+    <SiteShell>
+      <main id="main-content" className="flex flex-1 items-center justify-center px-4 py-12">
+        <p className="text-sm text-muted-foreground" role="status">
+          Finishing GitHub sign-in...
+        </p>
+      </main>
+    </SiteShell>
   )
 }
 
@@ -116,35 +119,37 @@ function CallbackView() {
   }
 
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center px-4 py-12">
-      <section
-        className="w-full max-w-md rounded-md border border-border bg-card p-6 shadow-sm sm:p-8"
-        aria-labelledby="callback-title"
-      >
-        <p className="text-sm font-medium text-primary">Sign-in problem</p>
-        <h1
-          id="callback-title"
-          className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-card-foreground"
+    <SiteShell>
+      <main id="main-content" className="flex flex-1 items-center justify-center px-4 py-12">
+        <section
+          className="w-full max-w-md rounded-md border border-border bg-card p-6 shadow-sm sm:p-8"
+          aria-labelledby="callback-title"
         >
-          We could not finish your GitHub sign-in.
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground" role="alert">
-          {message ?? "Please try again."}
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Button
-            type="button"
-            onClick={() => void handleRetry()}
-            disabled={!getSupabaseBrowserClient()}
+          <p className="text-sm font-medium text-primary">Sign-in problem</p>
+          <h1
+            id="callback-title"
+            className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-card-foreground"
           >
-            Try GitHub sign-in again
-          </Button>
-          <Button asChild type="button" variant="outline">
-            <Link href={next}>Return</Link>
-          </Button>
-        </div>
-      </section>
-    </main>
+            We could not finish your GitHub sign-in.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground" role="alert">
+            {message ?? "Please try again."}
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Button
+              type="button"
+              onClick={() => void handleRetry()}
+              disabled={!getSupabaseBrowserClient()}
+            >
+              Try GitHub sign-in again
+            </Button>
+            <Button asChild type="button" variant="outline">
+              <Link href={next}>Return</Link>
+            </Button>
+          </div>
+        </section>
+      </main>
+    </SiteShell>
   )
 }
 
