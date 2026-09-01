@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { ReloadIcon, TrashIcon } from "@radix-ui/react-icons"
-import type { CommentAuthor, SkillStats } from "@skill-grill/shared"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Cross1Icon, ReloadIcon, TrashIcon } from "@radix-ui/react-icons"
+import type { CommentAuthor, ReportReason, SkillStats } from "@skill-grill/shared"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { getGitHubIdentity } from "@/lib/auth/identity"
 import { formatSkillDate } from "@/lib/skills"
+import { submitCommentReport } from "@/lib/skill-api"
 import {
   removeCommentFromCache,
   useSkillCommentMutation,
@@ -21,6 +22,18 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 
 const MAX_COMMENT_LENGTH = 2000
+const MAX_REPORT_NOTE_LENGTH = 500
+const reportReasons: Array<{ value: ReportReason; label: string }> = [
+  { value: "spam", label: "Spam or promotion" },
+  { value: "abuse", label: "Abuse or harassment" },
+  { value: "unsafe", label: "Unsafe content" },
+  { value: "off_topic", label: "Off topic" },
+  { value: "other", label: "Other" },
+]
+
+function getReportedCommentKey(userId: string, commentId: string) {
+  return `${userId}:${commentId}`
+}
 
 export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats }) {
   const { session, signInWithGitHub, status } = useAuth()
@@ -29,6 +42,9 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
   const commentMutation = useSkillCommentMutation()
   const [body, setBody] = useState("")
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [reportedCommentKeys, setReportedCommentKeys] = useState<Set<string>>(
+    () => new Set()
+  )
   const identity = session ? getGitHubIdentity(session.user) : null
   const author: CommentAuthor | null = session && identity
     ? {
@@ -55,6 +71,18 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
   const trimmedBody = body.trim()
   const isBodyValid = trimmedBody.length >= 2 && trimmedBody.length <= MAX_COMMENT_LENGTH
   const canCompose = status === "authenticated" && Boolean(author) && commentsQuery.isSuccess
+
+  function markReported(commentId: string, reportedByUserId: string) {
+    if (!session?.user.id || session.user.id !== reportedByUserId) {
+      return
+    }
+
+    setReportedCommentKeys((current) => {
+      const next = new Set(current)
+      next.add(getReportedCommentKey(reportedByUserId, commentId))
+      return next
+    })
+  }
 
   async function handleSignIn() {
     setIsSigningIn(true)
@@ -238,6 +266,16 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
                     onRetry={() => retryComment(comment)}
                     onRemove={() => removeCommentFromCache(queryClient, slug, comment.id)}
                     retryDisabled={commentMutation.isPending}
+                    canReport={!session || session.user.id !== comment.author.id}
+                    isReported={Boolean(
+                      session?.user.id &&
+                        reportedCommentKeys.has(
+                          getReportedCommentKey(session.user.id, comment.id)
+                        )
+                    )}
+                    onReported={(reportedByUserId) =>
+                      markReported(comment.id, reportedByUserId)
+                    }
                   />
                 </div>
               ))}
@@ -281,11 +319,17 @@ function CommentRow({
   onRetry,
   onRemove,
   retryDisabled,
+  canReport,
+  isReported,
+  onReported,
 }: {
   comment: OptimisticCommentItem
   onRetry: () => void
   onRemove: () => void
   retryDisabled: boolean
+  canReport: boolean
+  isReported: boolean
+  onReported: (userId: string) => void
 }) {
   const authorLabel = comment.author.displayName ?? comment.author.username
   const initials = authorLabel
@@ -310,6 +354,13 @@ function CommentRow({
           <time dateTime={comment.createdAt} className="text-muted-foreground">
             {formatSkillDate(comment.createdAt)}
           </time>
+          {comment.clientStatus === undefined && canReport ? (
+            <ReportCommentDialog
+              commentId={comment.id}
+              isReported={isReported}
+              onReported={onReported}
+            />
+          ) : null}
         </div>
         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-foreground">
           {comment.body}
@@ -334,6 +385,221 @@ function CommentRow({
         ) : null}
       </div>
     </article>
+  )
+}
+
+function ReportCommentDialog({
+  commentId,
+  isReported,
+  onReported,
+}: {
+  commentId: string
+  isReported: boolean
+  onReported: (userId: string) => void
+}) {
+  const { session, signInWithGitHub, status } = useAuth()
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [showDialog, setShowDialog] = useState(false)
+  const [reason, setReason] = useState<ReportReason>("spam")
+  const [note, setNote] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const titleId = `report-comment-title-${commentId}`
+  const descriptionId = `report-comment-description-${commentId}`
+  const reasonName = `report-reason-${commentId}`
+  const noteIsValid = note.trim().length <= MAX_REPORT_NOTE_LENGTH
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+
+    if (!dialog) {
+      return
+    }
+
+    if (showDialog && !dialog.open) {
+      dialog.showModal()
+    } else if (!showDialog && dialog.open) {
+      dialog.close()
+    }
+  }, [showDialog])
+
+  function openDialog() {
+    setError(null)
+    setShowDialog(true)
+  }
+
+  async function handleSignIn() {
+    setIsSigningIn(true)
+
+    try {
+      await signInWithGitHub()
+    } finally {
+      setIsSigningIn(false)
+    }
+  }
+
+  async function submitReport(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!session || status !== "authenticated" || !noteIsValid || isSubmitting) {
+      return
+    }
+
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      const trimmedNote = note.trim()
+      await submitCommentReport(commentId, session.access_token, {
+        reason,
+        ...(trimmedNote ? { note: trimmedNote } : {}),
+      })
+      onReported(session.user.id)
+      setShowDialog(false)
+    } catch (reportError) {
+      setError(
+        reportError instanceof Error
+          ? reportError.message
+          : "The report could not be submitted. Please try again."
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isReported) {
+    return <span className="ml-auto text-xs text-muted-foreground">Reported</span>
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        className="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        onClick={openDialog}
+      >
+        Report
+      </Button>
+
+      <dialog
+        ref={dialogRef}
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        aria-modal="true"
+        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20"
+        onClose={() => setShowDialog(false)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            dialogRef.current?.close()
+          }
+        }}
+      >
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
+                Community safety
+              </p>
+              <h2 id={titleId} className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
+                Report this comment
+              </h2>
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              autoFocus
+              aria-label="Close report dialog"
+              onClick={() => dialogRef.current?.close()}
+            >
+              <Cross1Icon aria-hidden="true" />
+            </Button>
+          </div>
+
+          <p id={descriptionId} className="mt-4 text-sm leading-6 text-muted-foreground">
+            Reports are private signals for future moderation review. They do not hide comments automatically.
+          </p>
+
+          {status === "authenticated" && session ? (
+            <form onSubmit={(event) => void submitReport(event)} className="mt-6">
+              <fieldset disabled={isSubmitting}>
+                <legend className="text-sm font-medium">Why are you reporting it?</legend>
+                <div className="mt-3 grid gap-3">
+                  {reportReasons.map((option) => (
+                    <label key={option.value} className="flex items-center gap-3 text-sm">
+                      <input
+                        type="radio"
+                        name={reasonName}
+                        value={option.value}
+                        checked={reason === option.value}
+                        onChange={() => setReason(option.value)}
+                        className="size-4 accent-primary"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label htmlFor={`report-note-${commentId}`} className="mt-6 block text-sm font-medium">
+                Note <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Textarea
+                id={`report-note-${commentId}`}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                maxLength={MAX_REPORT_NOTE_LENGTH}
+                placeholder="Add context for a moderator…"
+                aria-invalid={!noteIsValid}
+                disabled={isSubmitting}
+                className="mt-3 min-h-24"
+              />
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <p>
+                  {noteIsValid ? "Keep the note factual and concise." : "Notes must be 500 characters or fewer."}
+                </p>
+                <p aria-live="polite">{note.length}/{MAX_REPORT_NOTE_LENGTH}</p>
+              </div>
+
+              {error ? (
+                <p className="mt-4 text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              <Button type="submit" className="mt-6" disabled={!noteIsValid || isSubmitting}>
+                {isSubmitting ? "Submitting…" : "Submit report"}
+              </Button>
+            </form>
+          ) : status === "loading" ? (
+            <p className="mt-6 text-sm text-muted-foreground" role="status">
+              Checking your account…
+            </p>
+          ) : (
+            <div className="mt-6">
+              <p className="text-sm leading-6 text-muted-foreground">
+                Sign in with GitHub to send a private report to the moderation team.
+              </p>
+              <Button
+                type="button"
+                className="mt-4"
+                onClick={() => void handleSignIn()}
+                disabled={status === "unavailable" || isSigningIn}
+              >
+                {status === "unavailable"
+                  ? "GitHub sign-in unavailable"
+                  : isSigningIn
+                    ? "Opening GitHub…"
+                    : "Sign in with GitHub"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </dialog>
+    </>
   )
 }
 

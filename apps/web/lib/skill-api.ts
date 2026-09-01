@@ -1,6 +1,8 @@
 import type {
   CommentCreateRequest,
   CommentCreateResponse,
+  CommentReportRequest,
+  CommentReportResponse,
   SkillDetailResponse,
   SkillListQuery,
   SkillListResponse,
@@ -108,6 +110,26 @@ export function submitSkillComment(
 ) {
   return apiFetch<CommentCreateResponse>(
     `/api/skills/${encodeURIComponent(slug)}/comments`,
+    {
+      method: "POST",
+      signal,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  )
+}
+
+export function submitCommentReport(
+  commentId: string,
+  accessToken: string,
+  request: CommentReportRequest,
+  signal?: AbortSignal
+) {
+  return apiFetch<CommentReportResponse>(
+    `/api/comments/${encodeURIComponent(commentId)}/report`,
     {
       method: "POST",
       signal,

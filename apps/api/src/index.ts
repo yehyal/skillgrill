@@ -4,6 +4,7 @@ import type {
   CommentCreateRequest,
   CommentCreateResponse,
   CommentItem,
+  CommentReportResponse,
   CommentPageResponse,
   HealthResponse,
   SkillDetailResponse,
@@ -33,7 +34,7 @@ type AppEnv = {
   Bindings: Bindings
 }
 
-type ErrorStatus = 400 | 401 | 404 | 500 | 503
+type ErrorStatus = 400 | 401 | 403 | 404 | 500 | 503
 
 const DEFAULT_LIMIT = 12
 const MAX_LIMIT = 50
@@ -48,6 +49,12 @@ const commentRequestSchema = z
   .object({
     id: z.string().uuid(),
     body: z.string().trim().min(2).max(2000),
+  })
+  .strict()
+const reportRequestSchema = z
+  .object({
+    reason: z.enum(["spam", "abuse", "unsafe", "off_topic", "other"]),
+    note: z.string().trim().max(500).optional().transform((note) => note || null),
   })
   .strict()
 
@@ -92,6 +99,10 @@ type CommentListRow = {
   authorAvatarUrl: string | null
 }
 
+type ReportFunctionRow = {
+  reports_count: number
+}
+
 export const app = new Hono<AppEnv>()
 
 app.use(
@@ -116,6 +127,119 @@ app.get("/health", (context) => {
   const response: HealthResponse = { ok: true }
 
   return context.json(response)
+})
+
+app.post("/api/comments/:commentId/report", async (context) => {
+  context.header("Cache-Control", "private, no-store")
+  const userId = await getAuthenticatedUserId(context)
+
+  if (!userId) {
+    return jsonError(
+      context,
+      "unauthorized",
+      "A valid Supabase access token is required.",
+      401
+    )
+  }
+
+  const commentId = z.string().uuid().safeParse(context.req.param("commentId"))
+
+  if (!commentId.success) {
+    return jsonError(context, "invalid_request", "commentId must be a valid UUID.", 400)
+  }
+
+  let payload: unknown
+
+  try {
+    payload = await context.req.json()
+  } catch {
+    return jsonError(
+      context,
+      "invalid_request",
+      "The request body must be valid JSON matching { reason, note? }.",
+      400
+    )
+  }
+
+  const parsed = reportRequestSchema.safeParse(payload)
+
+  if (!parsed.success) {
+    return jsonError(
+      context,
+      "invalid_request",
+      "Reason must be spam, abuse, unsafe, off_topic, or other, with an optional note up to 500 characters.",
+      400
+    )
+  }
+
+  const database = getDatabase(context.env.DATABASE_URL)
+
+  if (!database) {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Reporting is temporarily unavailable because the database is not configured.",
+      503
+    )
+  }
+
+  try {
+    const rows = await database.db.execute<ReportFunctionRow>(sql`
+      select reports_count
+      from public.report_comment(
+        ${commentId.data}::uuid,
+        ${userId}::uuid,
+        ${parsed.data.reason},
+        ${parsed.data.note}
+      )
+    `)
+    const result = rows[0]
+
+    if (!result) {
+      return jsonError(
+        context,
+        "comment_not_found",
+        "That comment is no longer available for reporting.",
+        404
+      )
+    }
+
+    const response: CommentReportResponse = {
+      ok: true,
+      reportsCount: result.reports_count,
+    }
+
+    return context.json(response)
+  } catch (error) {
+    const message = getDatabaseErrorMessage(error)
+
+    if (message === "report_self_forbidden") {
+      return jsonError(
+        context,
+        "forbidden",
+        "You cannot report your own comment.",
+        403
+      )
+    }
+
+    if (message === "report_reason_invalid" || message === "report_note_invalid") {
+      return jsonError(
+        context,
+        "invalid_request",
+        "The report details are invalid.",
+        400
+      )
+    }
+
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Reporting is temporarily unavailable. Please try again shortly.",
+      503
+    )
+  } finally {
+    await closeDatabase(database)
+  }
 })
 
 app.get("/api/skills", async (context) => {

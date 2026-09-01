@@ -120,8 +120,22 @@ export type CommentCreateResponse = {
   }
 }
 
+export type ReportReason = "spam" | "abuse" | "unsafe" | "off_topic" | "other"
+
+export type CommentReportRequest = {
+  reason: ReportReason
+  note?: string
+}
+
+export type CommentReportResponse = {
+  ok: true
+  reportsCount: number
+}
+
 export type ApiErrorCode =
   | "database_unavailable"
+  | "comment_not_found"
+  | "forbidden"
   | "invalid_query"
   | "invalid_request"
   | "skill_not_found"
