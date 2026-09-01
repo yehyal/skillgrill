@@ -1,7 +1,10 @@
 import type {
+  CommentCreateRequest,
+  CommentCreateResponse,
   SkillDetailResponse,
   SkillListQuery,
   SkillListResponse,
+  CommentPageResponse,
   SkillMeResponse,
   SkillStatsResponse,
   VoteRequest,
@@ -57,6 +60,22 @@ export function fetchSkillStats(slug: string, signal?: AbortSignal) {
   )
 }
 
+export function fetchSkillComments(
+  slug: string,
+  options: { limit: number; cursor: string | null; signal?: AbortSignal }
+) {
+  const params = new URLSearchParams({ limit: String(options.limit) })
+
+  if (options.cursor) {
+    params.set("cursor", options.cursor)
+  }
+
+  return apiFetch<CommentPageResponse>(
+    `/api/skills/${encodeURIComponent(slug)}/comments?${params.toString()}`,
+    { signal: options.signal }
+  )
+}
+
 export function fetchSkillMe(slug: string, accessToken: string, signal?: AbortSignal) {
   return apiFetch<SkillMeResponse>(`/api/skills/${encodeURIComponent(slug)}/me`, {
     signal,
@@ -79,4 +98,24 @@ export function submitSkillVote(
     },
     body: JSON.stringify(request),
   })
+}
+
+export function submitSkillComment(
+  slug: string,
+  accessToken: string,
+  request: CommentCreateRequest,
+  signal?: AbortSignal
+) {
+  return apiFetch<CommentCreateResponse>(
+    `/api/skills/${encodeURIComponent(slug)}/comments`,
+    {
+      method: "POST",
+      signal,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  )
 }

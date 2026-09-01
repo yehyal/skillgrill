@@ -21,6 +21,7 @@ import { formatAgentLabel, formatSkillDate, formatTagLabel } from "@/lib/skills"
 import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
 import { ApiRequestError } from "@/lib/api"
+import { SkillComments } from "@/components/skills/skill-comments"
 import { SkillVoteBox } from "@/components/skills/skill-vote-box"
 
 export function SkillDetail() {
@@ -178,6 +179,8 @@ function SkillDetailContent({
 
         <SkillVoteBox slug={skill.slug} stats={stats} statsIsPending={statsIsPending} />
       </div>
+
+      <SkillComments slug={skill.slug} stats={stats} />
     </>
   )
 }

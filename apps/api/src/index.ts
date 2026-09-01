@@ -1,6 +1,10 @@
-import { createDatabase, skillVotes, skills } from "@skill-grill/db"
+import { comments, createDatabase, profiles, skillVotes, skills } from "@skill-grill/db"
 import type {
   ApiErrorCode,
+  CommentCreateRequest,
+  CommentCreateResponse,
+  CommentItem,
+  CommentPageResponse,
   HealthResponse,
   SkillDetailResponse,
   SkillListQuery,
@@ -13,7 +17,7 @@ import type {
   VoteValue,
 } from "@skill-grill/shared"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm"
+import { and, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm"
 import { Hono, type Context } from "hono"
 import { cors } from "hono/cors"
 import { z } from "zod"
@@ -33,9 +37,17 @@ type ErrorStatus = 400 | 401 | 404 | 500 | 503
 
 const DEFAULT_LIMIT = 12
 const MAX_LIMIT = 50
+const DEFAULT_COMMENT_LIMIT = 20
+const MAX_COMMENT_LIMIT = 50
 const voteRequestSchema = z
   .object({
     value: z.union([z.literal(1), z.literal(-1), z.null()]),
+  })
+  .strict()
+const commentRequestSchema = z
+  .object({
+    id: z.string().uuid(),
+    body: z.string().trim().min(2).max(2000),
   })
   .strict()
 
@@ -49,6 +61,35 @@ type VoteFunctionRow = {
   downvotes_count: number
   comments_count: number
   score: number
+}
+
+type CommentCursor = {
+  createdAt: string
+  id: string
+}
+
+type CommentFunctionRow = {
+  comment_id: string
+  skill_id: string
+  user_id: string
+  body: string
+  created_at: Date
+  comments_count: number
+  author_username: string
+  author_display_name: string | null
+  author_avatar_url: string | null
+}
+
+type CommentListRow = {
+  id: string
+  skillId: string
+  body: string
+  createdAt: Date
+  cursorCreatedAt: string
+  authorId: string
+  authorUsername: string
+  authorDisplayName: string | null
+  authorAvatarUrl: string | null
 }
 
 export const app = new Hono<AppEnv>()
@@ -66,7 +107,7 @@ app.use(
       return ""
     },
     allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "PUT", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
     maxAge: 600,
   })
 )
@@ -268,6 +309,231 @@ app.get("/api/skills/:slug/stats", async (context) => {
       context,
       "database_unavailable",
       "Skill statistics are temporarily unavailable. Please try again shortly.",
+      503
+    )
+  } finally {
+    await closeDatabase(database)
+  }
+})
+
+app.get("/api/skills/:slug/comments", async (context) => {
+  const parsedQuery = parseCommentQuery(context.req.query())
+
+  if (!parsedQuery.ok) {
+    return jsonError(context, "invalid_query", parsedQuery.message, 400)
+  }
+
+  const database = getDatabase(context.env.DATABASE_URL)
+
+  if (!database) {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Comments are temporarily unavailable because the database is not configured.",
+      503
+    )
+  }
+
+  try {
+    const skillRows = await database.db
+      .select({ id: skills.id })
+      .from(skills)
+      .where(and(eq(skills.slug, context.req.param("slug")), eq(skills.status, "active")))
+      .limit(1)
+    const skill = skillRows[0]
+
+    if (!skill) {
+      return jsonError(
+        context,
+        "skill_not_found",
+        "That skill does not exist or is no longer public.",
+        404
+      )
+    }
+
+    const conditions = [
+      eq(comments.skillId, skill.id),
+      eq(comments.status, "visible"),
+      isNull(comments.parentId),
+    ]
+
+    if (parsedQuery.value.cursor) {
+      const cursor = parsedQuery.value.cursor
+      const cursorCondition = or(
+        sql`${comments.createdAt} < ${cursor.createdAt}::timestamptz`,
+        and(
+          sql`${comments.createdAt} = ${cursor.createdAt}::timestamptz`,
+          sql`${comments.id} < ${cursor.id}::uuid`
+        )
+      )
+
+      if (cursorCondition) {
+        conditions.push(cursorCondition)
+      }
+    }
+
+    const rows = await database.db
+      .select({
+        id: comments.id,
+        skillId: comments.skillId,
+        body: comments.body,
+        createdAt: comments.createdAt,
+        cursorCreatedAt: sql<string>`to_char(${comments.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+        authorId: profiles.id,
+        authorUsername: profiles.username,
+        authorDisplayName: profiles.displayName,
+        authorAvatarUrl: profiles.avatarUrl,
+      })
+      .from(comments)
+      .innerJoin(profiles, eq(profiles.id, comments.userId))
+      .where(and(...conditions))
+      .orderBy(desc(comments.createdAt), desc(comments.id))
+      .limit(parsedQuery.value.limit + 1)
+
+    const hasNextPage = rows.length > parsedQuery.value.limit
+    const pageRows = rows.slice(0, parsedQuery.value.limit)
+    const lastRow = pageRows.at(-1)
+    const response: CommentPageResponse = {
+      data: pageRows.map(toCommentItem),
+      nextCursor:
+        hasNextPage && lastRow
+          ? encodeCommentCursor({
+              createdAt: lastRow.cursorCreatedAt,
+              id: lastRow.id,
+            })
+          : null,
+    }
+
+    context.header(
+      "Cache-Control",
+      "public, max-age=30, s-maxage=60, stale-while-revalidate=60"
+    )
+    return context.json(response)
+  } catch {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Comments are temporarily unavailable. Please try again shortly.",
+      503
+    )
+  } finally {
+    await closeDatabase(database)
+  }
+})
+
+app.post("/api/skills/:slug/comments", async (context) => {
+  context.header("Cache-Control", "private, no-store")
+  const userId = await getAuthenticatedUserId(context)
+
+  if (!userId) {
+    return jsonError(
+      context,
+      "unauthorized",
+      "A valid Supabase access token is required.",
+      401
+    )
+  }
+
+  let payload: unknown
+
+  try {
+    payload = await context.req.json()
+  } catch {
+    return jsonError(
+      context,
+      "invalid_request",
+      "The request body must be valid JSON matching { id: string, body: string }.",
+      400
+    )
+  }
+
+  const parsed = commentRequestSchema.safeParse(payload)
+
+  if (!parsed.success) {
+    return jsonError(
+      context,
+      "invalid_request",
+      "Comment id must be a UUID and the body must be between 2 and 2,000 characters after trimming.",
+      400
+    )
+  }
+
+  const database = getDatabase(context.env.DATABASE_URL)
+
+  if (!database) {
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Comments are temporarily unavailable because the database is not configured.",
+      503
+    )
+  }
+
+  try {
+    const request: CommentCreateRequest = parsed.data
+    const rows = await database.db.execute<CommentFunctionRow>(sql`
+      select
+        comment_id,
+        skill_id,
+        user_id,
+        body,
+        created_at,
+        comments_count,
+        author_username,
+        author_display_name,
+        author_avatar_url
+      from public.create_skill_comment(
+        ${request.id}::uuid,
+        ${context.req.param("slug")},
+        ${userId}::uuid,
+        ${request.body}
+      )
+    `
+    )
+    const comment = rows[0]
+
+    if (!comment) {
+      return jsonError(
+        context,
+        "skill_not_found",
+        "That skill does not exist or is no longer public.",
+        404
+      )
+    }
+
+    const response: CommentCreateResponse = {
+      data: {
+        comment: {
+          id: comment.comment_id,
+          skillId: comment.skill_id,
+          body: comment.body,
+          createdAt: toIsoTimestamp(comment.created_at),
+          author: {
+            id: comment.user_id,
+            username: comment.author_username,
+            displayName: comment.author_display_name,
+            avatarUrl: comment.author_avatar_url,
+          },
+        },
+        commentsCount: comment.comments_count,
+      },
+    }
+
+    return context.json(response)
+  } catch (error) {
+    if (isCommentValidationError(error)) {
+      return jsonError(
+        context,
+        "invalid_request",
+        getCommentValidationMessage(error),
+        400
+      )
+    }
+
+    return jsonError(
+      context,
+      "database_unavailable",
+      "Comments are temporarily unavailable. Please try again shortly.",
       503
     )
   } finally {
@@ -509,6 +775,119 @@ async function closeDatabase(database: ReturnType<typeof createDatabase>) {
   } catch {
     // The request has already completed; a failed cleanup must not mask it.
   }
+}
+
+function parseCommentQuery(
+  query: Record<string, string | undefined>
+): { ok: true; value: { limit: number; cursor: CommentCursor | null } } | { ok: false; message: string } {
+  const limit = parsePositiveInteger(query.limit, DEFAULT_COMMENT_LIMIT)
+
+  if (limit === null) {
+    return { ok: false, message: "limit must be a positive integer." }
+  }
+
+  if (limit > MAX_COMMENT_LIMIT) {
+    return {
+      ok: false,
+      message: `limit cannot be greater than ${MAX_COMMENT_LIMIT}.`,
+    }
+  }
+
+  if (!query.cursor) {
+    return { ok: true, value: { limit, cursor: null } }
+  }
+
+  const cursor = decodeCommentCursor(query.cursor)
+
+  if (!cursor) {
+    return { ok: false, message: "cursor must be a valid comment cursor." }
+  }
+
+  return { ok: true, value: { limit, cursor } }
+}
+
+function encodeCommentCursor(cursor: CommentCursor) {
+  return btoa(JSON.stringify(cursor))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "")
+}
+
+function decodeCommentCursor(value: string): CommentCursor | null {
+  try {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/")
+    const padding = "=".repeat((4 - (normalized.length % 4)) % 4)
+    const parsed = JSON.parse(atob(normalized + padding)) as {
+      createdAt?: unknown
+      id?: unknown
+    }
+
+    if (
+      typeof parsed.createdAt !== "string" ||
+      !Number.isFinite(Date.parse(parsed.createdAt)) ||
+      typeof parsed.id !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(parsed.id)
+    ) {
+      return null
+    }
+
+    return { createdAt: parsed.createdAt, id: parsed.id }
+  } catch {
+    return null
+  }
+}
+
+function toCommentItem(row: CommentListRow): CommentItem {
+  return {
+    id: row.id,
+    skillId: row.skillId,
+    body: row.body,
+    createdAt: toIsoTimestamp(row.createdAt),
+    author: {
+      id: row.authorId,
+      username: row.authorUsername,
+      displayName: row.authorDisplayName,
+      avatarUrl: row.authorAvatarUrl,
+    },
+  }
+}
+
+function toIsoTimestamp(value: Date | string) {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString()
+}
+
+function isCommentValidationError(error: unknown) {
+  const message = getDatabaseErrorMessage(error)
+
+  return [
+    "comment_profile_missing",
+    "comment_id_conflict",
+    "comment_body_invalid",
+  ].includes(message)
+}
+
+function getCommentValidationMessage(error: unknown) {
+  switch (getDatabaseErrorMessage(error)) {
+    case "comment_profile_missing":
+      return "Your profile is not ready yet. Sign in again before posting a comment."
+    case "comment_id_conflict":
+      return "That comment id is already associated with different data."
+    default:
+      return "Comment body must be between 2 and 2,000 characters after trimming."
+  }
+}
+
+function getDatabaseErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = error.message
+    return typeof message === "string" ? message : ""
+  }
+
+  return ""
 }
 
 function parseSkillListQuery(

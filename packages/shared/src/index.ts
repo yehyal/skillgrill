@@ -88,6 +88,38 @@ export type SkillDetailResponse = {
   data: SkillDetail & SkillStats
 }
 
+export type CommentAuthor = {
+  id: string
+  username: string
+  displayName: string | null
+  avatarUrl: string | null
+}
+
+export type CommentItem = {
+  id: string
+  skillId: string
+  body: string
+  createdAt: string
+  author: CommentAuthor
+}
+
+export type CommentPageResponse = {
+  data: CommentItem[]
+  nextCursor: string | null
+}
+
+export type CommentCreateRequest = {
+  id: string
+  body: string
+}
+
+export type CommentCreateResponse = {
+  data: {
+    comment: CommentItem
+    commentsCount: number
+  }
+}
+
 export type ApiErrorCode =
   | "database_unavailable"
   | "invalid_query"
