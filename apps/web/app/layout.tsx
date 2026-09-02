@@ -6,11 +6,12 @@ import { Toaster } from "sonner"
 import { QueryProvider } from "@/components/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth/auth-provider"
+import { siteConfig } from "@/lib/site-config"
 
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Skill Grill",
+  title: siteConfig.name,
   description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
 }
 

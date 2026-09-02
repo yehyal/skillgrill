@@ -1,8 +1,8 @@
-# RateMySkills — Product & MVP Specification
+# Skill Grill — Product & MVP Specification
 
 ## 1. Product Summary
 
-**RateMySkills** is a community review and discovery site for AI agent skills.
+**Skill Grill** is a community review and discovery site for AI agent skills.
 
 The MVP focuses on a small, polished, locally seeded directory where users can browse popular skills, inspect skill detail pages, vote useful/not useful, leave top-level comments, and report problematic comments.
 
@@ -14,7 +14,7 @@ The first version deliberately avoids live syncing from `skills.sh` or the Verce
 
 ### Longer positioning
 
-> RateMySkills is a community trust layer for AI agent skills, helping developers discover useful skills through votes, comments, and practical usage feedback.
+> Skill Grill is a community trust layer for AI agent skills, helping developers discover useful skills through votes, comments, and practical usage feedback.
 
 ---
 
@@ -159,7 +159,7 @@ Use:
 
 Reasoning:
 
-Next.js is the better fit for this MVP because the product is semi-dynamic and user-interactive. Astro is excellent for mostly static content sites, but RateMySkills needs logged-in state, optimistic voting, comments, reporting, and eventually admin/moderation flows.
+Next.js is the better fit for this MVP because the product is semi-dynamic and user-interactive. Astro is excellent for mostly static content sites, but Skill Grill needs logged-in state, optimistic voting, comments, reporting, and eventually admin/moderation flows.
 
 The frontend should avoid heavy reliance on Node-only server features if deployed on Cloudflare. The backend API should live separately in Cloudflare Workers.
 
@@ -1181,7 +1181,7 @@ The initial seed does not need to be accurate production data. It exists to buil
 ## 18. Suggested Monorepo Structure
 
 ```txt
-ratemyskills/
+skill-grill/
   apps/
     web/
       app/
