@@ -8,14 +8,19 @@ export function AppFooter() {
     <footer className="border-t border-border py-6 text-sm text-muted-foreground">
       <PageContainer className="grid gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <Link
-              href="/"
-              className="font-medium text-foreground outline-none hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              {siteConfig.name}
-            </Link>
-            <p className="mt-1 max-w-[36ch] leading-6">Firsthand reviews for AI agent skills that need to deliver.</p>
+          <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:gap-4">
+            <span>{siteConfig.copyright}</span>
+            <span>
+              Built by{" "}
+              <a
+                href={siteConfig.builderUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-foreground underline decoration-border underline-offset-4 outline-none hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {siteConfig.builderHandle}
+              </a>
+            </span>
           </div>
           <nav aria-label="Footer navigation">
             <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
@@ -27,20 +32,7 @@ export function AppFooter() {
             </ul>
           </nav>
         </div>
-        <div className="flex flex-col gap-1 border-t border-border pt-4 text-xs sm:flex-row sm:items-center sm:gap-4">
-          <span>{siteConfig.copyright}</span>
-          <span>
-            Built by{" "}
-            <a
-              href={siteConfig.builderUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-foreground underline decoration-border underline-offset-4 outline-none hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              {siteConfig.builderHandle}
-            </a>
-          </span>
-        </div>
+
       </PageContainer>
     </footer>
   )

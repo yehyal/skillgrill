@@ -124,15 +124,15 @@ export function HomeDiscovery() {
               <h2 id="contribute-title" className="mt-2 text-xl font-semibold">Browse. Try. Contribute.</h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-3">
-              <div className="border-t border-border pt-3">
+              <div className="pt-3">
                 <h3 className="text-sm font-semibold">Find the right fit.</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Search by the task or agent you have in front of you.</p>
               </div>
-              <div className="border-t border-border pt-3">
+              <div className=" pt-3">
                 <h3 className="text-sm font-semibold">Put it to work.</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Open the install command, source, and docs before you commit.</p>
               </div>
-              <div className="border-t border-border pt-3">
+              <div className="pt-3">
                 <h3 className="text-sm font-semibold">Give your verdict.</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Rate it and leave context so the next person can choose well.</p>
               </div>

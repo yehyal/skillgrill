@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { ThickArrowDownIcon, ThickArrowUpIcon, Cross1Icon } from "@radix-ui/react-icons"
 import type { SkillStats, VoteValue } from "@skill-grill/shared"
 
+import { GitHubSignInPrompt } from "@/components/auth/github-sign-in-prompt"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { useSkillMeQuery, useSkillVoteMutation } from "@/lib/skill-queries"
@@ -18,9 +19,8 @@ export function SkillVoteBox({
   stats: SkillStats
   statsIsPending: boolean
 }) {
-  const { session, signInWithGitHub, status } = useAuth()
+  const { session, status } = useAuth()
   const [showSignIn, setShowSignIn] = useState(false)
-  const [isSigningIn, setIsSigningIn] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const meQuery = useSkillMeQuery(slug, session?.user.id, session?.access_token)
   const voteMutation = useSkillVoteMutation()
@@ -77,17 +77,6 @@ export function SkillVoteBox({
         toast.error("Couldn’t save your rating. Your previous choice has been restored.")
       },
     })
-  }
-
-  async function handleSignIn() {
-    setIsSigningIn(true)
-    const result = await signInWithGitHub()
-
-    if (!result.error) {
-      setShowSignIn(false)
-    }
-
-    setIsSigningIn(false)
   }
 
   return (
@@ -220,21 +209,11 @@ export function SkillVoteBox({
               <Cross1Icon aria-hidden="true" />
             </Button>
           </div>
-          <p id="sign-in-description" className="mt-4 text-sm leading-6 text-muted-foreground">
-            Sign in with GitHub to add one rating per skill.
-          </p>
-          <Button
-            type="button"
+          <GitHubSignInPrompt
             className="mt-6"
-            onClick={() => void handleSignIn()}
-            disabled={status === "unavailable" || isSigningIn}
-          >
-            {status === "unavailable"
-              ? "GitHub sign-in unavailable"
-              : isSigningIn
-                ? "Opening GitHub…"
-                : "Sign in with GitHub"}
-          </Button>
+            description={<span id="sign-in-description">Sign in with GitHub to add one rating per skill.</span>}
+            onSignedIn={() => setShowSignIn(false)}
+          />
         </div>
       </dialog>
     </section>

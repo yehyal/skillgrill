@@ -5,6 +5,7 @@ import { Cross1Icon, ReloadIcon, TrashIcon } from "@radix-ui/react-icons"
 import type { CommentAuthor, ReportReason, SkillStats } from "@skill-grill/shared"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GitHubSignInPrompt } from "@/components/auth/github-sign-in-prompt"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -37,12 +38,11 @@ function getReportedCommentKey(userId: string, commentId: string) {
 }
 
 export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats }) {
-  const { session, signInWithGitHub, status } = useAuth()
+  const { session, status } = useAuth()
   const queryClient = useQueryClient()
   const commentsQuery = useSkillCommentsQuery(slug)
   const commentMutation = useSkillCommentMutation()
   const [body, setBody] = useState("")
-  const [isSigningIn, setIsSigningIn] = useState(false)
   const [reportedCommentKeys, setReportedCommentKeys] = useState<Set<string>>(
     () => new Set()
   )
@@ -83,12 +83,6 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
       next.add(getReportedCommentKey(reportedByUserId, commentId))
       return next
     })
-  }
-
-  async function handleSignIn() {
-    setIsSigningIn(true)
-    await signInWithGitHub()
-    setIsSigningIn(false)
   }
 
   function submitComment(event: React.FormEvent<HTMLFormElement>) {
@@ -213,22 +207,10 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
         ) : (
           <div className="border-y border-border py-5">
             <p className="text-sm font-medium">Tried this skill?</p>
-            <p className="mt-2 max-w-[58ch] text-sm leading-6 text-muted-foreground">
-              Sign in with GitHub to say whether it delivered and what others should know.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-4"
-              onClick={() => void handleSignIn()}
-              disabled={status === "unavailable" || isSigningIn}
-            >
-              {status === "unavailable"
-                ? "GitHub sign-in unavailable"
-                : isSigningIn
-                  ? "Opening GitHub…"
-                  : "Sign in with GitHub"}
-            </Button>
+            <GitHubSignInPrompt
+              className="mt-2"
+              description="Sign in with GitHub to say whether it delivered and what others should know."
+            />
           </div>
         )}
 
@@ -400,13 +382,12 @@ function ReportCommentDialog({
   isReported: boolean
   onReported: (userId: string) => void
 }) {
-  const { session, signInWithGitHub, status } = useAuth()
+  const { session, status } = useAuth()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [showDialog, setShowDialog] = useState(false)
   const [reason, setReason] = useState<ReportReason>("spam")
   const [note, setNote] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [isSigningIn, setIsSigningIn] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const titleId = `report-comment-title-${commentId}`
   const descriptionId = `report-comment-description-${commentId}`
@@ -430,16 +411,6 @@ function ReportCommentDialog({
   function openDialog() {
     setError(null)
     setShowDialog(true)
-  }
-
-  async function handleSignIn() {
-    setIsSigningIn(true)
-
-    try {
-      await signInWithGitHub()
-    } finally {
-      setIsSigningIn(false)
-    }
   }
 
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
@@ -583,23 +554,10 @@ function ReportCommentDialog({
               Checking your account…
             </p>
           ) : (
-            <div className="mt-6">
-              <p className="text-sm leading-6 text-muted-foreground">
-                Sign in with GitHub to send a private report to the moderation team.
-              </p>
-              <Button
-                type="button"
-                className="mt-4"
-                onClick={() => void handleSignIn()}
-                disabled={status === "unavailable" || isSigningIn}
-              >
-                {status === "unavailable"
-                  ? "GitHub sign-in unavailable"
-                  : isSigningIn
-                    ? "Opening GitHub…"
-                    : "Sign in with GitHub"}
-              </Button>
-            </div>
+            <GitHubSignInPrompt
+              className="mt-6"
+              description="Sign in with GitHub to send a private report to the moderation team."
+            />
           )}
         </div>
       </dialog>
