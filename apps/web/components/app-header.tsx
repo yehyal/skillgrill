@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getGitHubIdentity } from "@/lib/auth/identity"
 import { useAuth } from "@/lib/auth/auth-provider"
+import { siteConfig } from "@/lib/site-config"
 import { cn } from "@/lib/utils"
 import { PageContainer } from "@/components/page-container"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -94,10 +96,17 @@ export function AppHeader() {
           className="flex min-w-0 items-center gap-2 rounded-sm text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:gap-3"
         >
           <span
-            className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary text-[0.6875rem] font-bold text-primary-foreground"
+            className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary"
             aria-hidden="true"
           >
-            SG
+            <Image
+              src={siteConfig.logoPath}
+              alt=""
+              width={128}
+              height={128}
+              className="size-full object-contain invert"
+              priority
+            />
           </span>
           <span className="hidden truncate text-sm font-semibold sm:inline">
             Skill Grill

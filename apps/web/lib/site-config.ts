@@ -8,6 +8,7 @@ if (process.env.NODE_ENV === "production" && !contactEmail) {
 
 export const siteConfig = {
   name: "Skill Grill",
+  logoPath: "/assets/skill-grill-icon.svg",
   operator: "Skill Grill, an independent project built by @yehyal",
   builderHandle: "@yehyal",
   builderUrl: "https://x.com/yehyal",
