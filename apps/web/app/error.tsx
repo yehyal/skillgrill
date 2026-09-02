@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 export default function GlobalError({ reset }: { reset: () => void }) {
   return (
     <SiteShell>
-      <main id="main-content" className="flex flex-1 items-center">
+      <main id="main-content" tabIndex={-1} className="flex flex-1 items-center">
         <PageContainer className="w-full py-16 sm:py-24">
           <div className="max-w-2xl border-t border-destructive/40 pt-8" role="alert">
             <Badge variant="accent">Something went wrong</Badge>

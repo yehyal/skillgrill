@@ -117,7 +117,7 @@ export function SkillsBrowser() {
   )
 
   return (
-    <main id="main-content" className="flex-1">
+    <main id="main-content" tabIndex={-1} className="flex-1">
       <PageContainer className="py-8 sm:py-10 lg:py-12">
         <div className="flex flex-col gap-3 border-b border-border pb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
           <div>
@@ -197,9 +197,9 @@ export function SkillsBrowser() {
                     setSearch(event.target.value)
                     setSearchIsDirty(true)
                   }}
-                  placeholder="Search by name, description, or tag"
+                  placeholder="Search by name, description, tag, or agent"
                   className="pl-9"
-                  aria-label="Search by name, description, or tag"
+                  aria-label="Search by name, description, tag, or agent"
                 />
               </span>
             </label>

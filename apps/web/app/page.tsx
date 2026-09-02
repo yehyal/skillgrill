@@ -9,7 +9,7 @@ import Link from "next/link"
 export default function Home() {
   return (
     <SiteShell>
-      <main id="main-content" className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1">
         <section aria-labelledby="hero-title" className="border-b border-border">
           <PageContainer className="grid gap-8 py-8 sm:py-10 md:grid-cols-[minmax(0,1fr)_17rem] md:items-end lg:py-12">
             <div className="max-w-[44rem]">

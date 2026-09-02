@@ -64,7 +64,7 @@ export function SkillDetail() {
   }
 
   return (
-    <main id="main-content" className="flex-1">
+    <main id="main-content" tabIndex={-1} className="flex-1">
       <PageContainer className="py-8 sm:py-10 lg:py-12">
         {error ? (
           <>
@@ -148,7 +148,7 @@ function SkillDetailContent({
           <SkillComments slug={skill.slug} stats={stats} />
         </div>
 
-        <aside className="min-w-0 lg:pt-1">
+        <aside className="min-w-0 lg:pt-1 mt-28"  >
           <SkillMetadata skill={skill} />
         </aside>
       </div>

@@ -1120,7 +1120,8 @@ function buildSkillWhere(query: SkillListQuery) {
     const searchCondition = or(
       ilike(skills.name, pattern),
       ilike(skills.description, pattern),
-      sql`${skills.tags}::text ILIKE ${pattern}`
+      sql`${skills.tags}::text ILIKE ${pattern}`,
+      sql`${skills.supportedAgents}::text ILIKE ${pattern}`
     )
 
     if (searchCondition) {

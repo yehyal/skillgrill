@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -36,6 +37,7 @@ function AuthSkeleton() {
 }
 
 export function AppHeader() {
+  const pathname = usePathname()
   const { error, session, signInWithGitHub, signOut, status, user } = useAuth()
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -117,6 +119,7 @@ export function AppHeader() {
           <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/skills"
+              aria-current={pathname.startsWith("/skills") ? "page" : undefined}
               className="rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <span className="sm:hidden">Browse</span>

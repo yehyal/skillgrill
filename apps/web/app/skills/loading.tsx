@@ -5,7 +5,7 @@ import { SkillListSkeleton } from "@/components/skills/skill-list-skeleton"
 export default function Loading() {
   return (
     <SiteShell>
-      <main id="main-content" className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1">
         <PageContainer className="py-8 sm:py-10 lg:py-12">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
             Skill directory

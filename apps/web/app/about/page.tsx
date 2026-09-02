@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <SiteShell>
-      <main id="main-content" className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1">
         <PageContainer className="py-10 sm:py-14 lg:py-16">
           <header className="max-w-3xl border-b border-border pb-8 sm:pb-10">
             <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-primary">

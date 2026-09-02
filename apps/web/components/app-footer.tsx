@@ -1,9 +1,14 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import { PageContainer } from "@/components/page-container"
 import { siteConfig } from "@/lib/site-config"
 
 export function AppFooter() {
+  const pathname = usePathname()
+
   return (
     <footer className="border-t border-border py-6 text-sm text-muted-foreground">
       <PageContainer className="grid gap-6">
@@ -24,11 +29,11 @@ export function AppFooter() {
           </div>
           <nav aria-label="Footer navigation">
             <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-              <li><Link className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/skills">Browse</Link></li>
-              <li><Link className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/about">About</Link></li>
-              <li><Link className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/privacy">Privacy</Link></li>
-              <li><Link className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/terms">Terms</Link></li>
-              <li><Link className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/contact">Contact</Link></li>
+              <li><Link aria-current={pathname.startsWith("/skills") ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/skills">Browse</Link></li>
+              <li><Link aria-current={pathname === "/about" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/about">About</Link></li>
+              <li><Link aria-current={pathname === "/privacy" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/privacy">Privacy</Link></li>
+              <li><Link aria-current={pathname === "/terms" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/terms">Terms</Link></li>
+              <li><Link aria-current={pathname === "/contact" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/contact">Contact</Link></li>
             </ul>
           </nav>
         </div>

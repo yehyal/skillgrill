@@ -15,7 +15,7 @@ type CallbackState = "checking" | "error"
 function CallbackFallback() {
   return (
     <SiteShell>
-      <main id="main-content" className="flex flex-1 items-center justify-center px-4 py-12">
+      <main id="main-content" tabIndex={-1} className="flex flex-1 items-center justify-center px-4 py-12">
         <p className="text-sm text-muted-foreground" role="status">
           Finishing GitHub sign-in...
         </p>
@@ -120,7 +120,7 @@ function CallbackView() {
 
   return (
     <SiteShell>
-      <main id="main-content" className="flex flex-1 items-center justify-center px-4 py-12">
+      <main id="main-content" tabIndex={-1} className="flex flex-1 items-center justify-center px-4 py-12">
         <section
           className="w-full max-w-md rounded-md border border-border bg-card p-6 shadow-sm sm:p-8"
           aria-labelledby="callback-title"
