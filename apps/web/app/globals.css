@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -53,35 +56,34 @@
   --input: oklch(0.82 0.02 82);
   --ring: oklch(0.59 0.16 38);
   --radius: 0.5rem;
+  --content-frame: 72rem;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.18 0.015 80);
-    --foreground: oklch(0.93 0.012 84);
-    --card: oklch(0.235 0.016 80);
-    --card-foreground: oklch(0.93 0.012 84);
-    --popover: oklch(0.245 0.016 80);
-    --popover-foreground: oklch(0.93 0.012 84);
-    --primary: oklch(0.68 0.15 40);
-    --primary-foreground: oklch(0.18 0.018 80);
-    --secondary: oklch(0.28 0.016 80);
-    --secondary-foreground: oklch(0.91 0.012 84);
-    --muted: oklch(0.26 0.016 80);
-    --muted-foreground: oklch(0.72 0.018 82);
-    --accent: oklch(0.3 0.05 48);
-    --accent-foreground: oklch(0.93 0.012 84);
-    --destructive: oklch(0.68 0.15 28);
-    --success: oklch(0.72 0.12 148);
-    --success-foreground: oklch(0.18 0.018 80);
-    --warning: oklch(0.8 0.12 78);
-    --warning-foreground: oklch(0.2 0.02 80);
-    --border: oklch(0.34 0.018 80);
-    --input: oklch(0.38 0.02 80);
-    --ring: oklch(0.68 0.15 40);
-    color-scheme: dark;
-  }
+.dark {
+  --background: oklch(0.18 0.015 80);
+  --foreground: oklch(0.93 0.012 84);
+  --card: oklch(0.235 0.016 80);
+  --card-foreground: oklch(0.93 0.012 84);
+  --popover: oklch(0.245 0.016 80);
+  --popover-foreground: oklch(0.93 0.012 84);
+  --primary: oklch(0.68 0.15 40);
+  --primary-foreground: oklch(0.18 0.018 80);
+  --secondary: oklch(0.28 0.016 80);
+  --secondary-foreground: oklch(0.91 0.012 84);
+  --muted: oklch(0.26 0.016 80);
+  --muted-foreground: oklch(0.72 0.018 82);
+  --accent: oklch(0.3 0.05 48);
+  --accent-foreground: oklch(0.93 0.012 84);
+  --destructive: oklch(0.68 0.15 28);
+  --success: oklch(0.72 0.12 148);
+  --success-foreground: oklch(0.18 0.018 80);
+  --warning: oklch(0.8 0.12 78);
+  --warning-foreground: oklch(0.2 0.02 80);
+  --border: oklch(0.34 0.018 80);
+  --input: oklch(0.38 0.02 80);
+  --ring: oklch(0.68 0.15 40);
+  color-scheme: dark;
 }
 
 * {
@@ -99,6 +101,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 button,

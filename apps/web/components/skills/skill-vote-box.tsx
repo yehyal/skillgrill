@@ -1,11 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ArrowDownIcon, ArrowUpIcon, Cross1Icon } from "@radix-ui/react-icons"
+import { ThickArrowDownIcon, ThickArrowUpIcon, Cross1Icon } from "@radix-ui/react-icons"
 import type { SkillStats, VoteValue } from "@skill-grill/shared"
 
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { useSkillMeQuery, useSkillVoteMutation } from "@/lib/skill-queries"
 import { toast } from "sonner"
@@ -66,12 +65,16 @@ export function SkillVoteBox({
       baseStats: stats,
     }, {
       onSuccess: () => {
-        toast.success(nextVote === null ? "Vote removed" : "Vote saved")
+        toast.success(
+          nextVote === null
+            ? "Rating removed."
+            : nextVote === 1
+              ? "Marked Well done."
+              : "Marked Undercooked."
+        )
       },
       onError: () => {
-        toast.error("Vote rolled back", {
-          description: "Your vote could not be saved. Try again when the API is available.",
-        })
+        toast.error("Couldn’t save your rating. Your previous choice has been restored.")
       },
     })
   }
@@ -88,43 +91,62 @@ export function SkillVoteBox({
   }
 
   return (
-    <aside
-      className="h-fit rounded-md border border-border bg-card p-5"
-      aria-labelledby="community-title"
+    <section
+      className="h-fit w-full border-y border-border py-3"
+      aria-labelledby="verdict-title"
     >
-      <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
-        Community pulse
-      </p>
-      <h2 id="community-title" className="mt-3 text-xl font-semibold tracking-[-0.04em]">
-        Cast your signal
-      </h2>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Vote once to help agents find skills that hold up in practice.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <p
+              id="verdict-title"
+              className="font-mono text-lg uppercase tracking-[0.18em] text-primary"
+            >
+              The verdict
+            </p>
+            {/*<h2 id="verdict-title" className="text-base font-semibold">
+              Did it deliver?
+            </h2>*/}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tried it? Add your take.
+          </p>
+        </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-2" role="group" aria-label="Vote on this skill">
-        <Button
-          type="button"
-          variant={myVote === 1 ? "default" : "outline"}
-          aria-pressed={myVote === 1}
-          aria-label={`Upvote ${slug}`}
-          disabled={controlsDisabled}
-          onClick={() => handleVote(1)}
-        >
-          <ArrowUpIcon aria-hidden="true" />
-          Upvote
-        </Button>
-        <Button
-          type="button"
-          variant={myVote === -1 ? "default" : "outline"}
-          aria-pressed={myVote === -1}
-          aria-label={`Downvote ${slug}`}
-          disabled={controlsDisabled}
-          onClick={() => handleVote(-1)}
-        >
-          <ArrowDownIcon aria-hidden="true" />
-          Downvote
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-1.5" role="group" aria-label="Rate this skill">
+          <Button
+            type="button"
+            size="sm"
+            variant={myVote === 1 ? "default" : "outline"}
+            aria-pressed={myVote === 1}
+            aria-label={`Mark this skill Well done. ${stats.upvotesCount} positive votes.`}
+            disabled={controlsDisabled}
+            onClick={() => handleVote(1)}
+            className="gap-1.5 px-2.5"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <ThickArrowUpIcon aria-hidden="true" />
+              Well done
+            </span>
+            <span className="font-mono text-xs tabular-nums">{stats.upvotesCount}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={myVote === -1 ? "default" : "outline"}
+            aria-pressed={myVote === -1}
+            aria-label={`Mark this skill Undercooked. ${stats.downvotesCount} negative votes.`}
+            disabled={controlsDisabled}
+            onClick={() => handleVote(-1)}
+            className="gap-1.5 px-2.5"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <ThickArrowDownIcon aria-hidden="true" />
+              Undercooked
+            </span>
+            <span className="font-mono text-xs tabular-nums">{stats.downvotesCount}</span>
+          </Button>
+        </div>
       </div>
 
       {status === "loading" ? (
@@ -135,7 +157,7 @@ export function SkillVoteBox({
 
       {meQuery.error ? (
         <div className="mt-4" role="alert">
-          <p className="text-sm text-destructive">Could not load your vote state.</p>
+          <p className="text-sm text-destructive">Could not load your rating.</p>
           <Button
             type="button"
             size="sm"
@@ -148,30 +170,19 @@ export function SkillVoteBox({
         </div>
       ) : null}
 
-      <Separator className="my-5" />
-      <dl className="grid gap-4 text-sm">
-        <div className="flex items-center justify-between gap-4">
-          <dt className="text-muted-foreground">Score</dt>
-          <dd className="font-semibold tabular-nums" aria-live="polite">
-            {stats.score}
-          </dd>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <dt className="text-muted-foreground">Upvotes</dt>
-          <dd className="font-semibold tabular-nums">{stats.upvotesCount}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <dt className="text-muted-foreground">Downvotes</dt>
-          <dd className="font-semibold tabular-nums">{stats.downvotesCount}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <dt className="text-muted-foreground">Comments</dt>
-          <dd className="font-semibold tabular-nums">{stats.commentsCount}</dd>
-        </div>
-      </dl>
+      {voteMutation.isPending ? (
+        <p className="mt-3 text-xs text-muted-foreground" role="status">
+          Saving your rating…
+        </p>
+      ) : null}
+      {voteMutation.isError ? (
+        <p className="mt-3 text-xs text-destructive" role="alert">
+          Couldn’t save your rating. Your previous choice has been restored.
+        </p>
+      ) : null}
       {statsIsPending ? (
         <p className="mt-4 text-xs text-muted-foreground" role="status">
-          Refreshing community stats…
+          Updating votes…
         </p>
       ) : null}
 
@@ -192,10 +203,10 @@ export function SkillVoteBox({
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
-                Community signal
+                Your take
               </p>
               <h2 id="sign-in-title" className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
-                Sign in to vote
+                Sign in to rate
               </h2>
             </div>
             <Button
@@ -210,7 +221,7 @@ export function SkillVoteBox({
             </Button>
           </div>
           <p id="sign-in-description" className="mt-4 text-sm leading-6 text-muted-foreground">
-            Sign in with GitHub to save your vote and keep one signal per skill.
+            Sign in with GitHub to add one rating per skill.
           </p>
           <Button
             type="button"
@@ -226,6 +237,6 @@ export function SkillVoteBox({
           </Button>
         </div>
       </dialog>
-    </aside>
+    </section>
   )
 }

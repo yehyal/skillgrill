@@ -1,32 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import {
-  ArrowLeftIcon,
   ArrowTopRightIcon,
+  CheckIcon,
+  ChevronRightIcon,
   ClipboardIcon,
   ExternalLinkIcon,
 } from "@radix-ui/react-icons"
 import type { SkillDetailResponse, SkillStats } from "@skill-grill/shared"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
+import { ApiRequestError } from "@/lib/api"
 import { formatAgentLabel, formatSkillDate, formatTagLabel } from "@/lib/skills"
 import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
-import { ApiRequestError } from "@/lib/api"
 import { SkillComments } from "@/components/skills/skill-comments"
 import { SkillVoteBox } from "@/components/skills/skill-vote-box"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
 export function SkillDetail() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug
   const [copied, setCopied] = useState(false)
+  const copiedResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const detailQuery = useSkillDetailQuery(slug)
   const statsQuery = useSkillStatsQuery(slug)
   const result = detailQuery.data
@@ -34,12 +35,26 @@ export function SkillDetail() {
   const errorKind = error instanceof ApiRequestError && error.status === 404 ? "not-found" : "error"
   const stats = statsQuery.data?.data ?? result?.data
 
+  useEffect(() => {
+    return () => {
+      if (copiedResetTimer.current) {
+        clearTimeout(copiedResetTimer.current)
+      }
+    }
+  }, [])
+
   async function copyInstallCommand(command: string) {
     try {
       await navigator.clipboard.writeText(command)
       setCopied(true)
+      if (copiedResetTimer.current) {
+        clearTimeout(copiedResetTimer.current)
+      }
+      copiedResetTimer.current = setTimeout(() => {
+        setCopied(false)
+        copiedResetTimer.current = null
+      }, 1600)
       toast.success("Install command copied")
-      window.setTimeout(() => setCopied(false), 1800)
     } catch {
       setCopied(false)
       toast.error("Could not copy install command", {
@@ -50,22 +65,19 @@ export function SkillDetail() {
 
   return (
     <main id="main-content" className="flex-1">
-        <PageContainer className="py-12 sm:py-16 lg:py-20">
-          <Link href="/skills" className="inline-flex items-center gap-2 rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50">
-            <ArrowLeftIcon aria-hidden="true" />
-            Browse skills
-          </Link>
-
-          {error ? (
-            <div className="mt-16 max-w-2xl border-t border-border py-10" role="alert">
-              <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
+      <PageContainer className="py-8 sm:py-10 lg:py-12">
+        {error ? (
+          <>
+            <Breadcrumb />
+            <div className="mt-8 max-w-2xl border-t border-border py-10" role="alert">
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
                 {errorKind === "not-found" ? "Skill not found" : "Could not load"}
               </p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.065em]">
+              <h1 className="mt-3 text-3xl font-semibold leading-none sm:text-4xl">
                 {errorKind === "not-found" ? "That skill is not public." : "The skill page is taking a breather."}
               </h1>
-              <p className="mt-4 max-w-[42ch] text-sm leading-6 text-muted-foreground">{error.message}</p>
-              <div className="mt-7 flex flex-wrap gap-3">
+              <p className="mt-4 max-w-[46ch] text-sm leading-6 text-muted-foreground">{error.message}</p>
+              <div className="mt-6 flex flex-wrap gap-3">
                 {errorKind === "error" ? (
                   <Button type="button" onClick={() => void detailQuery.refetch()}>
                     Try again
@@ -76,18 +88,19 @@ export function SkillDetail() {
                 </Button>
               </div>
             </div>
-          ) : result ? (
-            <SkillDetailContent
-              result={result}
-              stats={stats ?? result.data}
-              statsIsPending={statsQuery.isPending}
-              copied={copied}
-              onCopy={copyInstallCommand}
-            />
-          ) : (
-            <SkillDetailSkeleton />
-          )}
-        </PageContainer>
+          </>
+        ) : result ? (
+          <SkillDetailContent
+            result={result}
+            stats={stats ?? result.data}
+            statsIsPending={statsQuery.isPending}
+            copied={copied}
+            onCopy={copyInstallCommand}
+          />
+        ) : (
+          <SkillDetailSkeleton />
+        )}
+      </PageContainer>
     </main>
   )
 }
@@ -109,103 +122,214 @@ function SkillDetailContent({
 
   return (
     <>
-      <header className="mt-12 max-w-4xl sm:mt-16">
-        <div className="flex flex-wrap gap-2">
-          {skill.tags.map((tag) => (
-            <Badge key={tag} variant="accent">
-              {formatTagLabel(tag)}
-            </Badge>
-          ))}
-        </div>
-        <h1 className="mt-6 max-w-[14ch] text-5xl font-semibold tracking-[-0.075em] text-balance sm:text-6xl">
-          {skill.name}
-        </h1>
-        <p className="mt-6 max-w-[58ch] text-lg leading-8 text-muted-foreground">{skill.description}</p>
-        <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-x-3">
-            Works with {skill.supportedAgents.map(formatAgentLabel).join(", ")}
-            <span aria-hidden="true">·</span>
-          </span>
-          <span>Added {formatSkillDate(skill.createdAt)}</span>
-        </div>
-      </header>
+      <Breadcrumb skillName={skill.name} />
 
-      <Separator className="my-12 sm:my-16" />
-
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-20">
+      <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-14">
         <div className="min-w-0">
-          <section aria-labelledby="install-title">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">Get started</p>
-            <h2 id="install-title" className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
-              Install this skill
-            </h2>
-            {skill.installCommand ? (
-              <div className="mt-5 flex flex-col items-stretch gap-3 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center">
-                <code className="block min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-1 text-sm text-foreground">
-                  {skill.installCommand}
-                </code>
-                <Button type="button" size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => onCopy(skill.installCommand!)}>
-                  <ClipboardIcon aria-hidden="true" />
-                  {copied ? "Copied" : "Copy"}
-                </Button>
-              </div>
-            ) : (
-              <p className="mt-5 rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
-                No install command has been published for this skill yet.
-              </p>
-            )}
-          </section>
+          <header>
+            <h1 className="max-w-[18ch] break-words text-4xl font-semibold leading-none sm:text-5xl">
+              {skill.name}
+            </h1>
+            <p className="mt-5 max-w-[66ch] text-base leading-7 text-muted-foreground">
+              {skill.description}
+            </p>
+          </header>
 
-          <section className="mt-12" aria-labelledby="links-title">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">References</p>
-            <h2 id="links-title" className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
-              Source and documentation
-            </h2>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {skill.sourceUrl ? (
-                <Button asChild variant="outline">
-                  <a href={skill.sourceUrl} target="_blank" rel="noreferrer">
-                    Source <ArrowTopRightIcon aria-hidden="true" />
-                  </a>
-                </Button>
-              ) : null}
-              {skill.docsUrl ? (
-                <Button asChild variant="outline">
-                  <a href={skill.docsUrl} target="_blank" rel="noreferrer">
-                    Documentation <ExternalLinkIcon aria-hidden="true" />
-                  </a>
-                </Button>
-              ) : null}
-              {!skill.sourceUrl && !skill.docsUrl ? (
-                <p className="text-sm text-muted-foreground">No public links have been added yet.</p>
-              ) : null}
-            </div>
-          </section>
+          <div className="mt-6">
+            <SkillVoteBox slug={skill.slug} stats={stats} statsIsPending={statsIsPending} />
+          </div>
+
+          <InstallBlock
+            command={skill.installCommand}
+            copied={copied}
+            onCopy={onCopy}
+          />
+
+          <SkillComments slug={skill.slug} stats={stats} />
         </div>
 
-        <SkillVoteBox slug={skill.slug} stats={stats} statsIsPending={statsIsPending} />
+        <aside className="min-w-0 lg:pt-1">
+          <SkillMetadata skill={skill} />
+        </aside>
+      </div>
+    </>
+  )
+}
+
+function Breadcrumb({ skillName }: { skillName?: string }) {
+  return (
+    <nav aria-label="Breadcrumb">
+      <ol className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <li>
+          <Link
+            href="/skills"
+            className="rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            Skill directory
+          </Link>
+        </li>
+        {skillName ? (
+          <>
+            <li aria-hidden="true">
+              <ChevronRightIcon className="size-3.5" />
+            </li>
+            <li className="min-w-0 truncate font-medium text-foreground" aria-current="page" title={skillName}>
+              {skillName}
+            </li>
+          </>
+        ) : null}
+      </ol>
+    </nav>
+  )
+}
+
+function InstallBlock({
+  command,
+  copied,
+  onCopy,
+}: {
+  command: string | null
+  copied: boolean
+  onCopy: (command: string) => void
+}) {
+  return (
+    <section className="mt-8" aria-labelledby="install-title">
+      <div className="flex items-baseline justify-between gap-4">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Get started</p>
+          <h2 id="install-title" className="mt-2 text-xl font-semibold">Install this skill</h2>
+        </div>
+        {copied ? (
+          <p className="text-xs text-success" role="status" aria-live="polite">Copied</p>
+        ) : null}
       </div>
 
-      <SkillComments slug={skill.slug} stats={stats} />
-    </>
+      {command ? (
+        <div className="mt-4 border border-primary/35 bg-card p-3 sm:p-2">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+            <span className="text-gray-500">$</span>
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-sm text-foreground">
+              npx {command}
+            </code>
+            <Button
+              type="button"
+              size="sm"
+              aria-label={copied ? "Install command copied" : "Copy install command"}
+              title={copied ? "Install command copied" : "Copy install command"}
+              className="w-full shrink-0 sm:w-auto"
+              onClick={() => onCopy(`npx ${command}`)}
+            >
+              {copied ? <CheckIcon aria-hidden="true" /> : <ClipboardIcon aria-hidden="true" />}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 border border-border bg-card p-4 text-sm text-muted-foreground">
+          No install command has been published for this skill yet.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function SkillMetadata({
+  skill,
+}: {
+  skill: SkillDetailResponse["data"]
+}) {
+  return (
+    <section className="border-y border-border py-5" aria-labelledby="metadata-title">
+      <h2 id="metadata-title" className="text-sm font-semibold">Skill details</h2>
+      <dl className="mt-5 grid gap-5 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">Identifier</dt>
+          <dd className="mt-1 break-all font-mono text-xs text-foreground">{skill.id}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Compatibility</dt>
+          <dd className="mt-1 break-words text-foreground">
+            {skill.supportedAgents.map(formatAgentLabel).join(" · ") || "Not listed"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Tags</dt>
+          <dd className="mt-2 flex flex-wrap gap-1.5">
+            {skill.tags.length > 0 ? skill.tags.map((tag) => (
+              <Badge key={tag} variant="outline">{formatTagLabel(tag)}</Badge>
+            )) : <span className="text-foreground">Not listed</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Added</dt>
+          <dd className="mt-1 text-foreground">
+            <time dateTime={skill.createdAt}>{formatSkillDate(skill.createdAt)}</time>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Updated</dt>
+          <dd className="mt-1 text-foreground">
+            <time dateTime={skill.updatedAt}>{formatSkillDate(skill.updatedAt)}</time>
+          </dd>
+        </div>
+      </dl>
+
+      <div className="mt-6 border-t border-border pt-5">
+        <h3 className="text-xs text-muted-foreground">Links</h3>
+        <div className="mt-2 grid gap-2">
+          {skill.sourceUrl ? (
+            <a
+              href={skill.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-w-0 items-center gap-2 break-words text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <ArrowTopRightIcon className="size-3.5 shrink-0" aria-hidden="true" />
+              Source
+            </a>
+          ) : null}
+          {skill.docsUrl ? (
+            <a
+              href={skill.docsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-w-0 items-center gap-2 break-words text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <ExternalLinkIcon className="size-3.5 shrink-0" aria-hidden="true" />
+              Documentation
+            </a>
+          ) : null}
+          {!skill.sourceUrl && !skill.docsUrl ? (
+            <p className="text-sm text-foreground">No public links yet.</p>
+          ) : null}
+        </div>
+      </div>
+    </section>
   )
 }
 
 export function SkillDetailSkeleton() {
   return (
-    <div className="mt-16" role="status" aria-label="Loading skill details">
-      <Skeleton className="h-5 w-28" />
-      <Skeleton className="mt-7 h-14 w-2/3 max-w-md" />
-      <Skeleton className="mt-6 h-6 w-full max-w-2xl" />
-      <Skeleton className="mt-3 h-6 w-4/5 max-w-xl" />
-      <Separator className="my-12 sm:my-16" />
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <div role="status" aria-label="Loading skill details">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-3 w-3" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-14">
         <div>
-          <Skeleton className="h-7 w-44" />
-          <Skeleton className="mt-5 h-12 w-full max-w-xl" />
-          <Skeleton className="mt-12 h-7 w-56" />
+          <Skeleton className="h-12 w-2/3 max-w-lg" />
+          <Skeleton className="mt-5 h-5 w-full max-w-2xl" />
+          <Skeleton className="mt-2 h-5 w-4/5 max-w-xl" />
+          <Skeleton className="mt-6 h-32 w-full max-w-xl" />
+          <Skeleton className="mt-8 h-24 w-full max-w-2xl" />
+          <div className="mt-12 border-t border-border pt-8">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="mt-6 h-24 w-full max-w-2xl" />
+          </div>
         </div>
-        <Skeleton className="h-64 w-full" />
+        <div>
+          <Skeleton className="h-72 w-full" />
+        </div>
       </div>
       <span className="sr-only">Loading skill details.</span>
     </div>

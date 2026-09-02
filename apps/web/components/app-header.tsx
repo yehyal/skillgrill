@@ -17,6 +17,7 @@ import { getGitHubIdentity } from "@/lib/auth/identity"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { cn } from "@/lib/utils"
 import { PageContainer } from "@/components/page-container"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { toast } from "sonner"
 
 function AuthSkeleton() {
@@ -86,25 +87,25 @@ export function AppHeader() {
   }
 
   return (
-    <header className="border-b border-border">
-      <PageContainer className="flex min-h-[4.5rem] items-center justify-between gap-2 sm:gap-4">
+    <header className="border-b border-border bg-background/95">
+      <PageContainer className="flex min-h-14 items-center justify-between gap-2 sm:gap-4">
         <Link
           href="/"
           className="flex min-w-0 items-center gap-2 rounded-sm text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:gap-3"
         >
           <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary text-xs font-bold tracking-[-0.08em] text-primary-foreground"
+            className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary text-[0.6875rem] font-bold text-primary-foreground"
             aria-hidden="true"
           >
             SG
           </span>
-          <span className="hidden truncate text-[0.9375rem] font-semibold tracking-[-0.03em] sm:inline">
+          <span className="hidden truncate text-sm font-semibold sm:inline">
             Skill Grill
           </span>
         </Link>
 
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-          <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-5">
+          <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/skills"
               className="rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -114,6 +115,8 @@ export function AppHeader() {
             </Link>
           </nav>
 
+          <ThemeToggle />
+
           {status === "loading" ? (
             <AuthSkeleton />
           ) : isAuthenticated && identity ? (
@@ -121,10 +124,10 @@ export function AppHeader() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex min-h-10 items-center gap-2 rounded-md p-1 pr-2 text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="flex min-h-9 items-center gap-2 rounded-md p-1 pr-2 text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   aria-label={`Open account menu for ${identity.username}`}
                 >
-                  <Avatar className="size-8">
+                  <Avatar className="size-7">
                     <AvatarImage src={identity.avatarUrl ?? undefined} alt="" />
                     <AvatarFallback>{identity.initials}</AvatarFallback>
                   </Avatar>

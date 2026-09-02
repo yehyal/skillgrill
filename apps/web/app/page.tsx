@@ -1,43 +1,104 @@
 import { PageContainer } from "@/components/page-container"
 import { SiteShell } from "@/components/site-shell"
+import { HomeDiscovery } from "@/components/skills/home-discovery"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ArrowRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import Link from "next/link"
 
 export default function Home() {
   return (
     <SiteShell>
-      <main id="main-content" className="flex flex-1">
-        <section className="hero flex w-full flex-1" aria-labelledby="hero-title">
-          <PageContainer className="grid w-full grid-cols-1 items-start gap-10 py-10 sm:gap-12 sm:py-16 md:items-end md:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.8fr)] md:gap-[clamp(3rem,8vw,9rem)] lg:py-20">
-            <div className="hero-copy max-w-[53rem]">
+      <main id="main-content" className="flex-1">
+        <section aria-labelledby="hero-title" className="border-b border-border">
+          <PageContainer className="grid gap-8 py-8 sm:py-10 md:grid-cols-[minmax(0,1fr)_17rem] md:items-end lg:py-12">
+            <div className="max-w-[44rem]">
+              <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-primary">
+                Skills, put to the test
+              </p>
               <h1
                 id="hero-title"
-                className="max-w-[16ch] text-[clamp(2.9rem,6vw,6.5rem)] font-[560] leading-[0.94] tracking-[-0.065em] text-balance sm:max-w-[18ch]"
+                className="mt-3 max-w-[18ch] text-4xl font-semibold leading-none text-balance sm:text-5xl"
               >
                 Find AI agent skills that actually work.
               </h1>
-              <p className="mt-6 max-w-[32rem] text-base leading-7 text-muted-foreground sm:mt-8 sm:text-lg sm:leading-8 md:mt-12">
-                Community votes, comments, and practical feedback for agent skills.
+              <p className="mt-4 max-w-[38rem] text-base leading-7 text-muted-foreground">
+                Votes, comments, and firsthand takes on whether each skill lives up to the hype.
               </p>
-              <Button asChild size="lg" className="mt-7 sm:mt-8 md:mt-10">
-                <Link href="/skills">Browse Skills</Link>
-              </Button>
+
+              <form action="/skills" className="mt-6 flex flex-col gap-2 sm:max-w-[36rem] sm:flex-row">
+                <label className="min-w-0 flex-1">
+                  <span className="sr-only">Search skills</span>
+                  <span className="relative block">
+                    <MagnifyingGlassIcon
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      name="q"
+                      placeholder="Search by name, task, tag, or agent"
+                      className="pl-9"
+                    />
+                  </span>
+                </label>
+                <Button type="submit" className="sm:px-5">
+                  Search
+                </Button>
+              </form>
             </div>
 
             <div
-              className="monogram flex aspect-square w-[min(100%,18rem)] flex-col justify-between self-end justify-self-end rounded-md border border-primary/20 bg-primary p-5 text-primary-foreground shadow-sm sm:w-full sm:max-w-[32rem] sm:p-8 md:justify-self-end"
+              className="grid gap-2 text-sm"
               aria-hidden="true"
             >
-              <span className="text-[clamp(4rem,10vw,9rem)] font-semibold leading-none tracking-[-0.1em]">
-                SG
-              </span>
-              <div className="flex items-end justify-between gap-4 text-[clamp(1.5rem,3.5vw,3.5rem)] font-semibold leading-[0.9] tracking-[-0.07em]">
-                <span>Skill</span>
-                <span>Grill</span>
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-card px-3 py-2">
+                <span className="font-medium">Browse</span>
+                <span className="font-mono text-xs text-muted-foreground">Directory</span>
+              </div>
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-card px-3 py-2">
+                <span className="font-medium">Compare</span>
+                <span className="font-mono text-xs text-muted-foreground">Ratings + comments</span>
+              </div>
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-card px-3 py-2">
+                <span className="font-medium">Install</span>
+                <span className="font-mono text-xs text-muted-foreground">Commands</span>
               </div>
             </div>
           </PageContainer>
         </section>
+
+        <PageContainer className="py-7 sm:py-8">
+          <section aria-labelledby="shortcuts-title">
+            <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
+              <h2 id="shortcuts-title" className="text-sm font-semibold">
+                Start with compatibility
+              </h2>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/skills">
+                  Browse all <ArrowRightIcon aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ["Codex", "/skills?agents=codex"],
+                ["Claude Code", "/skills?agents=claude-code"],
+                ["Cursor", "/skills?agents=cursor"],
+                ["Any agent", "/skills?agents=generic"],
+              ].map(([label, href]) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="rounded-md border border-border bg-card px-3 py-2 text-sm font-medium outline-none transition-colors hover:border-primary/50 hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </section>
+        </PageContainer>
+
+        <HomeDiscovery />
       </main>
     </SiteShell>
   )

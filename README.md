@@ -100,8 +100,10 @@ With the environment configured, run `pnpm dev`, open `http://localhost:3000`, a
 
 The API health check is available at `GET http://localhost:8787/health` and returns `{ "ok": true }` even when database configuration is absent. Skill routes return a structured `503 database_unavailable` response until `DATABASE_URL` is configured and reachable.
 
-## Foundation boundary
+## Implementation boundary
 
-Milestone 2 added the Drizzle database package, unapplied migrations, the idempotent 20-skill seed, public Worker discovery routes, and client-loaded `/skills` and `/skills/[slug]` surfaces. Milestone 3 adds TanStack Query, public statistics, and authenticated transactional voting. Comments, reports, and other mutation APIs remain deferred. Required shadcn/ui files are copied from the linked component source rather than installed through the shadcn CLI.
+Milestones 2 through 6 established the Drizzle database package, unapplied migrations, the idempotent 20-skill seed, public Worker discovery routes, client-loaded directory and detail surfaces, authenticated transactional voting, comments, reporting, and public-read caching. Milestone 7 adds the compact directory design system, All Time and Trending discovery, list/card presentation, and the recomposed detail page. Required shadcn/ui files are copied from the linked component source rather than installed through the shadcn CLI.
+
+Trending is intentionally a fresh signal. After the event migration is applied, a skill appears in Trending only when the sum of its `net_vote_delta` values from the rolling previous seven days is positive. Results rank by that seven-day net gain, then all-time upvotes, comments, and name. Historical votes are not backfilled, so the list is honestly empty until vote changes accumulate. The migration remains unapplied by default; use `pnpm db:migrate` only when you are ready to update the database.
 
 See [Product.md](./Product.md) for the product and MVP specification.

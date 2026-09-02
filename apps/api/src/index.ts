@@ -1,4 +1,11 @@
-import { comments, createDatabase, profiles, skillVotes, skills } from "@skill-grill/db"
+import {
+  comments,
+  createDatabase,
+  profiles,
+  skillVoteEvents,
+  skillVotes,
+  skills,
+} from "@skill-grill/db"
 import type {
   ApiErrorCode,
   CommentCreateRequest,
@@ -18,7 +25,7 @@ import type {
   VoteValue,
 } from "@skill-grill/shared"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import { and, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm"
+import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm"
 import { Hono, type Context } from "hono"
 import { cors } from "hono/cors"
 import { z } from "zod"
@@ -290,7 +297,7 @@ app.get("/api/skills", async (context) => {
   try {
     const where = buildSkillWhere(parsedQuery.value)
     const [totalResult, rows] = await Promise.all([
-      database.db.select({ total: count() }).from(skills).where(where),
+      getSkillListTotal(database.db, parsedQuery.value, where),
       getSkillListRows(database.db, parsedQuery.value, where),
     ])
     const total = Number(totalResult[0]?.total ?? 0)
@@ -308,6 +315,9 @@ app.get("/api/skills", async (context) => {
         downvotesCount: row.downvotesCount,
         commentsCount: row.commentsCount,
         score: row.score ?? row.upvotesCount - row.downvotesCount,
+        ...(parsedQuery.value.sort === "trending" && row.trendDelta !== null
+          ? { trendDelta: row.trendDelta }
+          : {}),
       })),
       pagination: {
         page: parsedQuery.value.page,
@@ -1037,7 +1047,7 @@ function parseSkillListQuery(
   if (!isSkillSort(sort)) {
     return {
       ok: false,
-      message: "sort must be one of popular, score, or newest.",
+      message: "sort must be one of popular, score, newest, or trending.",
     }
   }
 
@@ -1094,7 +1104,12 @@ function parseFilterValues(value: string | undefined) {
 }
 
 function isSkillSort(value: string): value is SkillSort {
-  return value === "popular" || value === "score" || value === "newest"
+  return (
+    value === "popular" ||
+    value === "score" ||
+    value === "newest" ||
+    value === "trending"
+  )
 }
 
 function buildSkillWhere(query: SkillListQuery) {
@@ -1139,12 +1154,42 @@ function getSkillListRows(
   query: SkillListQuery,
   where: ReturnType<typeof buildSkillWhere>
 ) {
+  if (query.sort === "trending") {
+    const trendTotals = getTrendTotals(database)
+
+    return database
+      .select({
+        id: skills.id,
+        slug: skills.slug,
+        name: skills.name,
+        description: skills.description,
+        tags: skills.tags,
+        supportedAgents: skills.supportedAgents,
+        upvotesCount: skills.upvotesCount,
+        downvotesCount: skills.downvotesCount,
+        commentsCount: skills.commentsCount,
+        score: skills.score,
+        trendDelta: trendTotals.trendDelta,
+      })
+      .from(skills)
+      .innerJoin(trendTotals, eq(skills.id, trendTotals.skillId))
+      .where(and(where, sql`${trendTotals.trendDelta} > 0`))
+      .orderBy(
+        desc(trendTotals.trendDelta),
+        desc(skills.upvotesCount),
+        desc(skills.commentsCount),
+        asc(skills.name)
+      )
+      .limit(query.limit)
+      .offset((query.page - 1) * query.limit)
+  }
+
   const orderBy =
     query.sort === "score"
       ? desc(skills.score)
       : query.sort === "newest"
         ? desc(skills.createdAt)
-        : [desc(skills.upvotesCount), desc(skills.commentsCount), desc(skills.score)]
+        : [desc(skills.upvotesCount), desc(skills.commentsCount), asc(skills.name)]
 
   const orderByClauses = Array.isArray(orderBy) ? orderBy : [orderBy]
 
@@ -1160,12 +1205,45 @@ function getSkillListRows(
       downvotesCount: skills.downvotesCount,
       commentsCount: skills.commentsCount,
       score: skills.score,
+      trendDelta: sql<number | null>`null`.as("trend_delta"),
     })
     .from(skills)
     .where(where)
     .orderBy(...orderByClauses)
     .limit(query.limit)
     .offset((query.page - 1) * query.limit)
+}
+
+function getSkillListTotal(
+  database: ReturnType<typeof createDatabase>["db"],
+  query: SkillListQuery,
+  where: ReturnType<typeof buildSkillWhere>
+) {
+  if (query.sort !== "trending") {
+    return database.select({ total: count() }).from(skills).where(where)
+  }
+
+  const trendTotals = getTrendTotals(database)
+
+  return database
+    .select({ total: count() })
+    .from(skills)
+    .innerJoin(trendTotals, eq(skills.id, trendTotals.skillId))
+    .where(and(where, sql`${trendTotals.trendDelta} > 0`))
+}
+
+function getTrendTotals(database: ReturnType<typeof createDatabase>["db"]) {
+  return database
+    .select({
+      skillId: skillVoteEvents.skillId,
+      trendDelta: sql<number>`coalesce(sum(${skillVoteEvents.netVoteDelta}), 0)::integer`.as(
+        "trend_delta"
+      ),
+    })
+    .from(skillVoteEvents)
+    .where(sql`${skillVoteEvents.createdAt} >= now() - interval '7 days'`)
+    .groupBy(skillVoteEvents.skillId)
+    .as("skill_trend_totals")
 }
 
 function escapeLikePattern(value: string) {

@@ -140,6 +140,48 @@ export const skillVotes = pgTable(
   })
 )
 
+export const skillVoteEvents = pgTable(
+  "skill_vote_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    skillId: text("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    previousVote: smallint("previous_vote"),
+    nextVote: smallint("next_vote"),
+    netVoteDelta: integer("net_vote_delta").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    skillCreatedAtIndex: index("skill_vote_events_skill_created_at_idx").on(
+      table.skillId,
+      table.createdAt
+    ),
+    createdAtIndex: index("skill_vote_events_created_at_idx").on(table.createdAt),
+    userCreatedAtIndex: index("skill_vote_events_user_created_at_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    previousVoteCheck: check(
+      "skill_vote_events_previous_vote_check",
+      sql`${table.previousVote} is null or ${table.previousVote} in (-1, 1)`
+    ),
+    nextVoteCheck: check(
+      "skill_vote_events_next_vote_check",
+      sql`${table.nextVote} is null or ${table.nextVote} in (-1, 1)`
+    ),
+    deltaCheck: check(
+      "skill_vote_events_delta_check",
+      sql`${table.netVoteDelta} between -2 and 2 and ${table.netVoteDelta} <> 0`
+    ),
+  })
+)
+
 export const comments = pgTable(
   "comments",
   {
@@ -216,12 +258,14 @@ export const commentReports = pgTable(
 
 export const profilesRelations = relations(profiles, ({ many }) => ({
   skillVotes: many(skillVotes),
+  skillVoteEvents: many(skillVoteEvents),
   comments: many(comments),
   commentReports: many(commentReports),
 }))
 
 export const skillsRelations = relations(skills, ({ many }) => ({
   votes: many(skillVotes),
+  voteEvents: many(skillVoteEvents),
   comments: many(comments),
 }))
 
@@ -232,6 +276,17 @@ export const skillVotesRelations = relations(skillVotes, ({ one }) => ({
   }),
   profile: one(profiles, {
     fields: [skillVotes.userId],
+    references: [profiles.id],
+  }),
+}))
+
+export const skillVoteEventsRelations = relations(skillVoteEvents, ({ one }) => ({
+  skill: one(skills, {
+    fields: [skillVoteEvents.skillId],
+    references: [skills.id],
+  }),
+  profile: one(profiles, {
+    fields: [skillVoteEvents.userId],
     references: [profiles.id],
   }),
 }))
@@ -270,5 +325,7 @@ export type NewProfile = typeof profiles.$inferInsert
 export type Skill = typeof skills.$inferSelect
 export type NewSkill = typeof skills.$inferInsert
 export type SkillVote = typeof skillVotes.$inferSelect
+export type SkillVoteEvent = typeof skillVoteEvents.$inferSelect
+export type NewSkillVoteEvent = typeof skillVoteEvents.$inferInsert
 export type Comment = typeof comments.$inferSelect
 export type CommentReport = typeof commentReports.$inferSelect

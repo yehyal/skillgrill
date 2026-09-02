@@ -4,7 +4,7 @@ export type HealthResponse = {
 
 export type SkillStatus = "active" | "hidden" | "archived"
 
-export type SkillSort = "popular" | "score" | "newest"
+export type SkillSort = "popular" | "score" | "newest" | "trending"
 
 export type SkillListQuery = {
   q?: string
@@ -26,6 +26,7 @@ export type SkillListItem = {
   downvotesCount: number
   commentsCount: number
   score: number
+  trendDelta?: number
 }
 
 export type SkillDetail = {

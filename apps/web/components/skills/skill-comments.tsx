@@ -135,25 +135,25 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
   }
 
   return (
-    <section className="mt-12 sm:mt-16" aria-labelledby="comments-title">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
-            Discussion
-          </p>
-          <h2 id="comments-title" className="mt-3 text-3xl font-semibold tracking-[-0.06em]">
-            What people are learning
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          {stats.commentsCount} {stats.commentsCount === 1 ? "comment" : "comments"}
+    <section className="mt-12 border-t border-border pt-8 sm:mt-16 sm:pt-10" aria-labelledby="comments-title">
+      <div>
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
+          Discussion
         </p>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 id="comments-title" className="text-2xl font-semibold">
+            What people are saying
+          </h2>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {stats.commentsCount} {stats.commentsCount === 1 ? "comment" : "comments"}
+          </p>
+        </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-7">
         {status === "authenticated" && author && !commentsQuery.isSuccess ? (
           <div
-            className="border-y border-border py-6"
+            className="border-y border-border py-5"
             role={commentsQuery.error ? "alert" : "status"}
           >
             <p className="text-sm font-medium">Load the discussion before posting.</p>
@@ -176,15 +176,15 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             ) : null}
           </div>
         ) : canCompose && author ? (
-          <form onSubmit={submitComment} className="border-y border-border py-6">
+          <form onSubmit={submitComment} className="border-y border-border py-5">
             <label htmlFor="comment-body" className="text-sm font-medium">
-              Add to the discussion
+              Share your experience
             </label>
             <Textarea
               id="comment-body"
               value={body}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="Share a practical note about using this skill…"
+              placeholder="What worked, what fell short, and would you use it again?"
               maxLength={MAX_COMMENT_LENGTH}
               aria-describedby="comment-help comment-count"
               disabled={commentMutation.isPending}
@@ -205,16 +205,16 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             </Button>
           </form>
         ) : status === "loading" ? (
-          <div className="border-y border-border py-6" role="status">
+          <div className="border-y border-border py-5" role="status">
             <Skeleton className="h-5 w-48" />
             <Skeleton className="mt-3 h-10 w-full" />
             <span className="sr-only">Checking your account…</span>
           </div>
         ) : (
-          <div className="border-y border-border py-6">
-            <p className="text-sm font-medium">Want to add context?</p>
+          <div className="border-y border-border py-5">
+            <p className="text-sm font-medium">Tried this skill?</p>
             <p className="mt-2 max-w-[58ch] text-sm leading-6 text-muted-foreground">
-              Sign in with GitHub to share what worked, what surprised you, or what others should know.
+              Sign in with GitHub to say whether it delivered and what others should know.
             </p>
             <Button
               type="button"
@@ -235,7 +235,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
         {commentsQuery.isPending ? (
           <CommentListSkeleton />
         ) : commentsQuery.error && comments.length === 0 ? (
-          <div className="border-y border-border py-8" role="alert">
+          <div className="border-y border-border py-7" role="alert">
             <p className="text-sm font-medium">The discussion is unavailable right now.</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Try again in a moment to load the latest comments.
@@ -252,10 +252,10 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             </Button>
           </div>
         ) : comments.length === 0 ? (
-          <div className="border-y border-border py-8">
-            <p className="text-sm font-medium">No comments yet.</p>
+          <div className="border-y border-border py-7">
+            <p className="text-sm font-medium">No firsthand takes yet.</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Be the first to leave a practical note for the next person trying this skill.
+              Be the first to say whether it delivered.
             </p>
           </div>
         ) : (
@@ -344,7 +344,7 @@ function CommentRow({
     .toUpperCase() || "GH"
 
   return (
-    <article className="flex gap-3 py-6">
+    <article className="flex gap-3 py-5 sm:gap-4 sm:py-6">
       <Avatar className="size-9">
         <AvatarImage src={comment.author.avatarUrl ?? undefined} alt="" />
         <AvatarFallback>{initials}</AvatarFallback>
@@ -365,7 +365,7 @@ function CommentRow({
             />
           ) : null}
         </div>
-        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-foreground">
+        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-foreground">
           {comment.body}
         </p>
         {comment.clientStatus === "sending" ? (
@@ -505,7 +505,7 @@ function ReportCommentDialog({
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
-                Community safety
+                Discussion safety
               </p>
               <h2 id={titleId} className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
                 Report this comment
@@ -524,7 +524,7 @@ function ReportCommentDialog({
           </div>
 
           <p id={descriptionId} className="mt-4 text-sm leading-6 text-muted-foreground">
-            Reports are private signals for future moderation review. They do not hide comments automatically.
+            Reports go to moderators for review. Reporting does not hide a comment automatically.
           </p>
 
           {status === "authenticated" && session ? (

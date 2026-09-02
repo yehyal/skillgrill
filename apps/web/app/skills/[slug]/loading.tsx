@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <SiteShell>
       <main id="main-content" className="flex-1">
-        <PageContainer className="py-12 sm:py-16 lg:py-20">
+        <PageContainer className="py-8 sm:py-10 lg:py-12">
           <SkillDetailSkeleton />
         </PageContainer>
       </main>
