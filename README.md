@@ -94,6 +94,20 @@ Public reads are explicitly cacheable at the browser and edge. Authenticated req
 | Authenticated reads and mutations | `private, no-store` |
 | Health, errors, and unmatched routes | `no-store` |
 
+## API safety and operations
+
+The Worker uses native Cloudflare Rate Limiting bindings for authenticated mutations. Each binding is keyed by the verified Supabase user ID and has its own one-minute window:
+
+| Mutation | Limit |
+| --- | --- |
+| Votes | 60 requests per minute |
+| Comments | 5 requests per minute |
+| Reports | 5 requests per minute |
+
+Rate-limited responses return `429`, `Retry-After: 60`, `Cache-Control: private, no-store`, and the structured `rate_limited` error code. API responses include an `X-Request-Id` header for support and log correlation. Failure logs contain the request ID, method, path, status, and safe error code only; authorization headers, tokens, comment bodies, and report notes are never logged.
+
+Workers Logs are enabled in `apps/api/wrangler.jsonc` with 10% head sampling for this beta. The API also sends baseline content-type, referrer, frame, and permissions policy headers. No paid monitoring vendor or CSP enforcement is included in this milestone.
+
 ## Local verification
 
 With the environment configured, run `pnpm dev`, open `http://localhost:3000`, and verify the initial loading state, guest header, GitHub consent, callback return, refreshed session, avatar fallback, local sign-out, and restored guest state. Without credentials, run `pnpm check` and verify the unavailable sign-in state plus the credential-free web tests.

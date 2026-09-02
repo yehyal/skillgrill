@@ -31,17 +31,27 @@ import { cors } from "hono/cors"
 import { z } from "zod"
 
 type Bindings = {
+  COMMENT_RATE_LIMITER?: RateLimiter
   DATABASE_URL?: string
+  REPORT_RATE_LIMITER?: RateLimiter
   SUPABASE_PUBLISHABLE_KEY?: string
   SUPABASE_URL?: string
+  VOTE_RATE_LIMITER?: RateLimiter
   WEB_ORIGIN?: string
 }
 
 type AppEnv = {
   Bindings: Bindings
+  Variables: {
+    requestId: string
+  }
 }
 
-type ErrorStatus = 400 | 401 | 403 | 404 | 500 | 503
+type RateLimiter = {
+  limit(options: { key: string }): Promise<{ success: boolean }>
+}
+
+type ErrorStatus = 400 | 401 | 403 | 404 | 429 | 500 | 503
 
 const DEFAULT_LIMIT = 12
 const MAX_LIMIT = 50
@@ -55,6 +65,13 @@ const CACHE_CONTROL = {
   stats: "public, max-age=10, s-maxage=60, stale-while-revalidate=60",
   comments: "public, max-age=30, s-maxage=60, stale-while-revalidate=60",
 } as const
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Frame-Options": "DENY",
+  "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=()",
+} as const
+const RATE_LIMIT_RETRY_AFTER_SECONDS = 60
 const voteRequestSchema = z
   .object({
     value: z.union([z.literal(1), z.literal(-1), z.null()]),
@@ -121,6 +138,14 @@ type ReportFunctionRow = {
 export const app = new Hono<AppEnv>()
 
 app.use("*", async (context, next) => {
+  const requestId = crypto.randomUUID()
+  context.set("requestId", requestId)
+  context.header("X-Request-Id", requestId)
+
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    context.header(name, value)
+  }
+
   const hasAuthorizationHeader = Boolean(context.req.header("Authorization"))
 
   if (hasAuthorizationHeader) {
@@ -156,6 +181,18 @@ app.use(
   })
 )
 
+app.onError((_error, context) => {
+  logApiFailure(context, "internal_error", 500)
+
+  return jsonError(
+    context,
+    "internal_error",
+    "Something went wrong while handling that request.",
+    500,
+    { log: false }
+  )
+})
+
 app.get("/health", (context) => {
   context.header("Cache-Control", CACHE_CONTROL.noStore)
   const response: HealthResponse = { ok: true }
@@ -174,6 +211,17 @@ app.post("/api/comments/:commentId/report", async (context) => {
       "A valid Supabase access token is required.",
       401
     )
+  }
+
+  const rateLimitResponse = await enforceRateLimit(
+    context,
+    userId,
+    context.env.REPORT_RATE_LIMITER,
+    "reports"
+  )
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
   }
 
   const commentId = z.string().uuid().safeParse(context.req.param("commentId"))
@@ -550,9 +598,9 @@ app.get("/api/skills/:slug/comments", async (context) => {
       nextCursor:
         hasNextPage && lastRow
           ? encodeCommentCursor({
-              createdAt: lastRow.cursorCreatedAt,
-              id: lastRow.id,
-            })
+            createdAt: lastRow.cursorCreatedAt,
+            id: lastRow.id,
+          })
           : null,
     }
 
@@ -581,6 +629,17 @@ app.post("/api/skills/:slug/comments", async (context) => {
       "A valid Supabase access token is required.",
       401
     )
+  }
+
+  const rateLimitResponse = await enforceRateLimit(
+    context,
+    userId,
+    context.env.COMMENT_RATE_LIMITER,
+    "comments"
+  )
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
   }
 
   let payload: unknown
@@ -769,6 +828,17 @@ app.put("/api/skills/:slug/vote", async (context) => {
     )
   }
 
+  const rateLimitResponse = await enforceRateLimit(
+    context,
+    userId,
+    context.env.VOTE_RATE_LIMITER,
+    "votes"
+  )
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   let payload: unknown
 
   try {
@@ -896,6 +966,41 @@ async function getAuthenticatedUserId(context: Context<AppEnv>) {
 
     return subject
   } catch {
+    return null
+  }
+}
+
+async function enforceRateLimit(
+  context: Context<AppEnv>,
+  userId: string,
+  limiter: RateLimiter | undefined,
+  resource: "votes" | "comments" | "reports"
+) {
+  if (!limiter) {
+    return null
+  }
+
+  try {
+    const outcome = await limiter.limit({ key: userId })
+
+    if (outcome.success) {
+      return null
+    }
+
+    context.header("Retry-After", String(RATE_LIMIT_RETRY_AFTER_SECONDS))
+
+    return jsonError(
+      context,
+      "rate_limited",
+      `Too many ${resource} in a short period. Please try again in a minute.`,
+      429,
+      { cacheControl: CACHE_CONTROL.private }
+    )
+  } catch {
+    logOperationalFailure(context, "rate_limit_binding_unavailable", resource)
+
+    // Local Hono requests do not have Wrangler bindings. A binding outage
+    // should not turn a valid, authenticated mutation into a false failure.
     return null
   }
 }
@@ -1255,10 +1360,49 @@ function jsonError(
   context: Context<AppEnv>,
   code: ApiErrorCode,
   message: string,
+  status: ErrorStatus,
+  options: { cacheControl?: string; log?: boolean } = {}
+) {
+  context.header("Cache-Control", options.cacheControl ?? CACHE_CONTROL.noStore)
+
+  if (options.log !== false) {
+    logApiFailure(context, code, status)
+  }
+
+  return context.json({ error: { code, message } }, status)
+}
+
+function logApiFailure(
+  context: Context<AppEnv>,
+  code: ApiErrorCode,
   status: ErrorStatus
 ) {
-  context.header("Cache-Control", CACHE_CONTROL.noStore)
-  return context.json({ error: { code, message } }, status)
+  console.warn(
+    JSON.stringify({
+      event: "api_failure",
+      requestId: context.get("requestId") ?? "unknown",
+      method: context.req.method,
+      path: context.req.path,
+      status,
+      code,
+    })
+  )
+}
+
+function logOperationalFailure(
+  context: Context<AppEnv>,
+  event: "rate_limit_binding_unavailable",
+  resource: "votes" | "comments" | "reports"
+) {
+  console.error(
+    JSON.stringify({
+      event,
+      requestId: context.get("requestId") ?? "unknown",
+      method: context.req.method,
+      path: context.req.path,
+      resource,
+    })
+  )
 }
 
 export default app

@@ -139,6 +139,7 @@ export type ApiErrorCode =
   | "forbidden"
   | "invalid_query"
   | "invalid_request"
+  | "rate_limited"
   | "skill_not_found"
   | "unauthorized"
   | "internal_error"
