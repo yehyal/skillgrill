@@ -10,10 +10,12 @@ import { cn } from "@/lib/utils"
 export function GitHubSignInPrompt({
   description,
   className,
+  onSignInStarted,
   onSignedIn,
 }: {
   description: ReactNode
   className?: string
+  onSignInStarted?: () => void
   onSignedIn?: () => void
 }) {
   const { signInWithGitHub, status } = useAuth()
@@ -21,6 +23,7 @@ export function GitHubSignInPrompt({
 
   async function handleSignIn() {
     setIsSigningIn(true)
+    onSignInStarted?.()
     const result = await signInWithGitHub()
 
     if (!result.error) {

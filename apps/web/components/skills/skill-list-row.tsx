@@ -3,6 +3,7 @@ import { ArrowRightIcon, ArrowUpIcon } from "@radix-ui/react-icons"
 import type { SkillListItem } from "@skill-grill/shared"
 
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
+import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
 import { formatAgentLabel } from "@/lib/skills"
 
 type SkillListRowProps = {
@@ -47,6 +48,7 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
         <p className="mt-2 truncate text-xs text-muted-foreground" title={skill.supportedAgents.map(formatAgentLabel).join(", ")}>
           {skill.supportedAgents.map(formatAgentLabel).join(" · ") || "Agent compatibility not listed"}
         </p>
+        {!compact ? <SkillTopReasonLabel reason={skill.topReason} className="mt-2" /> : null}
       </div>
 
       <div className="flex items-center justify-between gap-4 sm:min-w-[10.5rem] sm:flex-col sm:items-end sm:gap-2">
