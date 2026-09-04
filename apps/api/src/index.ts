@@ -20,12 +20,26 @@ import type {
   SkillMeResponse,
   SkillStatsResponse,
   SkillSort,
+  VoteReason,
+  VoteReasonCount,
   VoteRequest,
   VoteResponse,
   VoteValue,
 } from "@skill-grill/shared"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
-import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm"
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm"
 import { Hono, type Context } from "hono"
 import { cors } from "hono/cors"
 import { z } from "zod"
@@ -72,11 +86,26 @@ const SECURITY_HEADERS = {
   "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=()",
 } as const
 const RATE_LIMIT_RETRY_AFTER_SECONDS = 60
-const voteRequestSchema = z
-  .object({
-    value: z.union([z.literal(1), z.literal(-1), z.null()]),
-  })
-  .strict()
+const voteRequestSchema = z.union([
+  z
+    .object({
+      value: z.literal(1),
+      reason: z.enum(["works_reliably", "triggers_well", "lightweight"]).nullable(),
+    })
+    .strict(),
+  z
+    .object({
+      value: z.literal(-1),
+      reason: z.enum([
+        "does_not_work",
+        "misses_triggers",
+        "triggers_too_often",
+        "too_heavy",
+      ]).nullable(),
+    })
+    .strict(),
+  z.object({ value: z.null() }).strict(),
+])
 const commentRequestSchema = z
   .object({
     id: z.string().uuid(),
@@ -96,6 +125,7 @@ let cachedSupabaseConfig: string | null = null
 type VoteFunctionRow = {
   skill_id: string
   my_vote: number | null
+  my_reason: string | null
   upvotes_count: number
   downvotes_count: number
   comments_count: number
@@ -348,6 +378,10 @@ app.get("/api/skills", async (context) => {
       getSkillListTotal(database.db, parsedQuery.value, where),
       getSkillListRows(database.db, parsedQuery.value, where),
     ])
+    const topReasons = await getTopReasonsForSkills(
+      database.db,
+      rows.map((row) => row.id)
+    )
     const total = Number(totalResult[0]?.total ?? 0)
     const totalPages = total === 0 ? 0 : Math.ceil(total / parsedQuery.value.limit)
 
@@ -363,6 +397,7 @@ app.get("/api/skills", async (context) => {
         downvotesCount: row.downvotesCount,
         commentsCount: row.commentsCount,
         score: row.score ?? row.upvotesCount - row.downvotesCount,
+        topReason: topReasons.get(row.id) ?? null,
         ...(parsedQuery.value.sort === "trending" && row.trendDelta !== null
           ? { trendDelta: row.trendDelta }
           : {}),
@@ -436,10 +471,13 @@ app.get("/api/skills/:slug", async (context) => {
       )
     }
 
+    const reasonStats = await getSkillReasonStats(database.db, skill.id)
+
     const response: SkillDetailResponse = {
       data: {
         ...skill,
         score: skill.score ?? skill.upvotesCount - skill.downvotesCount,
+        ...reasonStats,
         createdAt: skill.createdAt.toISOString(),
         updatedAt: skill.updatedAt.toISOString(),
       },
@@ -495,10 +533,13 @@ app.get("/api/skills/:slug/stats", async (context) => {
       )
     }
 
+    const reasonStats = await getSkillReasonStats(database.db, skill.skillId)
+
     const response: SkillStatsResponse = {
       data: {
         ...skill,
         score: skill.score ?? skill.upvotesCount - skill.downvotesCount,
+        ...reasonStats,
       },
     }
 
@@ -778,6 +819,7 @@ app.get("/api/skills/:slug/me", async (context) => {
       .select({
         skillId: skills.id,
         value: skillVotes.value,
+        reason: skillVotes.reason,
       })
       .from(skills)
       .leftJoin(
@@ -799,7 +841,10 @@ app.get("/api/skills/:slug/me", async (context) => {
     }
 
     const response: SkillMeResponse = {
-      data: { myVote: normalizeVote(row.value) },
+      data: {
+        myVote: normalizeVote(row.value),
+        myReason: normalizeVoteReason(row.reason),
+      },
     }
 
     return context.json(response)
@@ -847,7 +892,7 @@ app.put("/api/skills/:slug/vote", async (context) => {
     return jsonError(
       context,
       "invalid_request",
-      "The request body must be valid JSON matching { value: 1 | -1 | null }.",
+      "The request body must be valid JSON containing a verdict and optional compatible reason.",
       400
     )
   }
@@ -858,7 +903,7 @@ app.put("/api/skills/:slug/vote", async (context) => {
     return jsonError(
       context,
       "invalid_request",
-      "The request body must be exactly { value: 1 | -1 | null }.",
+      "The request body must contain a verdict and a compatible reason, or { value: null }.",
       400
     )
   }
@@ -876,12 +921,14 @@ app.put("/api/skills/:slug/vote", async (context) => {
 
   try {
     const request: VoteRequest = parsed.data
+    const reason = request.value === null ? null : request.reason
     const rows = await database.db.execute<VoteFunctionRow>(sql`
-      select skill_id, my_vote, upvotes_count, downvotes_count, comments_count, score
+      select skill_id, my_vote, my_reason, upvotes_count, downvotes_count, comments_count, score
       from public.set_skill_vote(
         ${context.req.param("slug")},
         ${userId}::uuid,
-        ${request.value}::smallint
+        ${request.value}::smallint,
+        ${reason}::text
       )
     `)
     const vote = rows[0]
@@ -895,14 +942,18 @@ app.put("/api/skills/:slug/vote", async (context) => {
       )
     }
 
+    const reasonStats = await getSkillReasonStats(database.db, vote.skill_id)
+
     const response: VoteResponse = {
       data: {
         skillId: vote.skill_id,
         myVote: normalizeVote(vote.my_vote),
+        myReason: normalizeVoteReason(vote.my_reason),
         upvotesCount: vote.upvotes_count,
         downvotesCount: vote.downvotes_count,
         commentsCount: vote.comments_count,
         score: vote.score,
+        ...reasonStats,
       },
     }
 
@@ -1007,6 +1058,103 @@ async function enforceRateLimit(
 
 function normalizeVote(value: number | null | undefined): VoteValue {
   return value === 1 || value === -1 ? value : null
+}
+
+function normalizeVoteReason(value: unknown): VoteReason | null {
+  if (
+    value === "works_reliably" ||
+    value === "triggers_well" ||
+    value === "lightweight" ||
+    value === "does_not_work" ||
+    value === "misses_triggers" ||
+    value === "triggers_too_often" ||
+    value === "too_heavy"
+  ) {
+    return value
+  }
+
+  return null
+}
+
+type Database = ReturnType<typeof createDatabase>["db"]
+
+type ReasonCountRow = {
+  skillId: string
+  reason: string | null
+  value: number
+  count: number
+}
+
+function getReasonCountRows(database: Database, skillIds: string[]) {
+  if (skillIds.length === 0) {
+    return Promise.resolve([] as ReasonCountRow[])
+  }
+
+  const reasonCount = sql<number>`count(*)::integer`.as("reason_count")
+
+  return database
+    .select({
+      skillId: skillVotes.skillId,
+      reason: skillVotes.reason,
+      value: skillVotes.value,
+      count: reasonCount,
+    })
+    .from(skillVotes)
+    .where(and(inArray(skillVotes.skillId, skillIds), isNotNull(skillVotes.reason)))
+    .groupBy(skillVotes.skillId, skillVotes.reason, skillVotes.value)
+    .having(sql`count(*) >= 3`)
+    .orderBy(asc(skillVotes.skillId), desc(reasonCount), asc(skillVotes.reason))
+}
+
+async function getSkillReasonStats(database: Database, skillId: string) {
+  const [reasonRows, completionRows] = await Promise.all([
+    getReasonCountRows(database, [skillId]),
+    database
+      .select({
+        reasonedVotesCount: sql<number>`count(*) filter (where ${skillVotes.reason} is not null)::integer`,
+        unreasonedVotesCount: sql<number>`count(*) filter (where ${skillVotes.reason} is null)::integer`,
+      })
+      .from(skillVotes)
+      .where(eq(skillVotes.skillId, skillId)),
+  ])
+
+  return {
+    reasonCounts: reasonRows
+      .map(toVoteReasonCount)
+      .filter((reason): reason is VoteReasonCount => reason !== null)
+      .slice(0, 2),
+    reasonedVotesCount: Number(completionRows[0]?.reasonedVotesCount ?? 0),
+    unreasonedVotesCount: Number(completionRows[0]?.unreasonedVotesCount ?? 0),
+  }
+}
+
+async function getTopReasonsForSkills(database: Database, skillIds: string[]) {
+  const rows = await getReasonCountRows(database, skillIds)
+  const topReasons = new Map<string, VoteReasonCount>()
+
+  for (const row of rows) {
+    const reason = toVoteReasonCount(row)
+
+    if (reason && !topReasons.has(row.skillId)) {
+      topReasons.set(row.skillId, reason)
+    }
+  }
+
+  return topReasons
+}
+
+function toVoteReasonCount(row: ReasonCountRow): VoteReasonCount | null {
+  const reason = normalizeVoteReason(row.reason)
+
+  if ((row.value !== 1 && row.value !== -1) || !reason) {
+    return null
+  }
+
+  return {
+    reason,
+    value: row.value,
+    count: Number(row.count),
+  }
 }
 
 function getDatabase(databaseUrl: string | undefined) {

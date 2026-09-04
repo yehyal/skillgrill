@@ -19,6 +19,7 @@ Skill Grill is a warm, compact directory for comparing AI agent skills. The inte
 - Never describe comments as learning unless the content is genuinely educational.
 - Keep internal API and database names such as `upvotesCount` and `downvotesCount`; only presentation terminology changes.
 - Use “Well done” for positive votes and “Undercooked” for negative votes.
+- Use one optional reason to explain a verdict without making voting feel like a survey.
 
 ### Terminology
 
@@ -32,6 +33,46 @@ Skill Grill is a warm, compact directory for comparing AI agent skills. The inte
 | Positive vote | Well done |
 | Negative vote | Undercooked |
 | Comments | What people are saying |
+
+## Verdict Reasons
+
+The reason labels are:
+
+- Well done: Delivered reliably, Triggered when needed, Kept context light.
+- Undercooked: Did not deliver, Missed when needed, Triggered too often, Used too much context.
+
+The read-only aggregate section is titled **What people noticed** and shows at
+most two neutral badges. A reason is hidden until at least three current votes
+share it. The development-only completion line is `Reason response: N with · M
+without`; production does not expose completion metrics.
+
+Two presentational variants remain available for manual local comparison. The
+temporary `DEV_VOTE_REASON_UI` constant selects them in development, while
+production always uses vote-first. This is not an A/B test and has no
+assignment, cookie, analytics, or experiment system. Remove the selector after
+the final direction is chosen.
+
+### Vote-first
+
+Initially show only the Well done and Undercooked controls. After a new verdict
+succeeds, reveal the matching inline group under **What stood out?** with
+**Pick one, or skip it.** Existing reasoned votes show the selected label and a
+**Change reason** control; unreasoned votes show **Add a reason**. Dismissal
+does not send a request. Reason buttons are native single-select controls with
+`aria-pressed` and keep focus stable as the inline group opens or closes.
+
+### Always-visible
+
+Show compact groups titled **Well done because** and **Undercooked because**
+under the main verdict controls. Selecting a reason submits its verdict and
+reason in one request. Groups stack on mobile and use two columns when there is
+room.
+
+Both variants use visible hover, focus, selected, disabled, pending, error, and
+rollback states. Main verdict transitions retain the existing success toasts;
+reason-only changes use quiet saving feedback. Opposite-side reasons switch the
+verdict atomically, while selecting the current main verdict again removes the
+vote and its reason.
 
 ## Color
 

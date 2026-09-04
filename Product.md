@@ -515,6 +515,7 @@ create table skill_votes (
   user_id uuid not null references auth.users(id) on delete cascade,
 
   value smallint not null check (value in (-1, 1)),
+  reason text,
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -527,6 +528,7 @@ Vote behavior:
 
 - `1` means upvote/useful.
 - `-1` means downvote/not useful.
+- `reason` is nullable and must match the vote polarity.
 - Removing a vote deletes the row.
 
 ---
@@ -728,6 +730,58 @@ Recommended implementation:
 - The function should read the old vote, write the new vote, update counters, and return final counts in one transaction.
 
 This avoids race conditions and counter drift.
+
+## 10.5 Optional verdict reasons
+
+Each vote may include one optional reason. General Well done and Undercooked
+verdicts remain one-click actions; reasons are a lightweight follow-up and can
+be changed or cleared later.
+
+```ts
+type WellDoneReason = "works_reliably" | "triggers_well" | "lightweight"
+type UndercookedReason =
+  | "does_not_work"
+  | "misses_triggers"
+  | "triggers_too_often"
+  | "too_heavy"
+type VoteReason = WellDoneReason | UndercookedReason
+```
+
+The labels are Delivered reliably, Triggered when needed, Kept context light,
+Did not deliver, Missed when needed, Triggered too often, and Used too much
+context. A reason must match its vote polarity. Existing votes remain valid
+with no reason, and removing a vote removes its reason.
+
+Reason-only changes update the current vote row without changing skill vote
+counters, skill timestamps, or seven-day movement events. A vote-value change
+continues to update counters and `skill_vote_events` in the same transaction.
+
+For detail and stats responses, reason counts use current rows in
+`skill_votes`, exclude unreasoned votes, and become public only at three votes.
+The response returns up to two eligible reasons sorted by count descending and
+reason key ascending, plus explicit `reasonedVotesCount` and
+`unreasonedVotesCount` completion metrics. List responses return only the first
+eligible `topReason`, aggregated in one query for the current page.
+
+The vote request is a strict union:
+
+```ts
+type VoteRequest =
+  | { value: 1; reason: WellDoneReason | null }
+  | { value: -1; reason: UndercookedReason | null }
+  | { value: null }
+```
+
+`GET /api/skills/:slug/me` returns `myVote` and `myReason`. Detail, stats, and
+vote responses return reason aggregates and completion metrics. Private
+endpoints remain uncached.
+
+Development keeps two manually selectable presentations: vote-first reveals a
+matching inline reason picker after a new verdict, while always-visible shows
+both compact reason groups beneath the verdict buttons. Production defaults to
+vote-first. The selector is temporary development configuration and must be
+removed after a final direction is chosen; it is not an experiment or
+analytics system.
 
 ---
 
@@ -956,6 +1010,7 @@ type SkillListItem = {
   downvotesCount: number;
   commentsCount: number;
   score: number;
+  topReason: VoteReasonCount | null;
 };
 ```
 
@@ -986,6 +1041,15 @@ type SkillStats = {
   downvotesCount: number;
   commentsCount: number;
   score: number;
+  reasonCounts: VoteReasonCount[];
+  reasonedVotesCount: number;
+  unreasonedVotesCount: number;
+};
+
+type VoteReasonCount = {
+  reason: VoteReason;
+  value: 1 | -1;
+  count: number;
 };
 ```
 
@@ -994,6 +1058,7 @@ type SkillStats = {
 ```ts
 type SkillMeState = {
   myVote: 1 | -1 | null;
+  myReason: VoteReason | null;
 };
 ```
 
