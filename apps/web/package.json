@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build --webpack",
+    "build:pages": "SKILL_GRILL_STATIC_EXPORT=true next build --webpack",
     "start": "next start --port 3000",
     "lint": "eslint .",
     "test": "vitest run",

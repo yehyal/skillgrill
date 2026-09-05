@@ -27,6 +27,7 @@ export type SkillListItem = {
   commentsCount: number
   score: number
   trendDelta?: number
+  topReason: VoteReasonCount | null
 }
 
 export type SkillDetail = {
@@ -49,17 +50,38 @@ export type SkillStats = {
   downvotesCount: number
   commentsCount: number
   score: number
+  reasonCounts: VoteReasonCount[]
+  reasonedVotesCount: number
+  unreasonedVotesCount: number
 }
 
 export type VoteValue = 1 | -1 | null
 
-export type SkillMeState = {
-  myVote: VoteValue
+export type WellDoneReason = "works_reliably" | "triggers_well" | "lightweight"
+
+export type UndercookedReason =
+  | "does_not_work"
+  | "misses_triggers"
+  | "triggers_too_often"
+  | "too_heavy"
+
+export type VoteReason = WellDoneReason | UndercookedReason
+
+export type VoteReasonCount = {
+  reason: VoteReason
+  value: 1 | -1
+  count: number
 }
 
-export type VoteRequest = {
-  value: VoteValue
+export type SkillMeState = {
+  myVote: VoteValue
+  myReason: VoteReason | null
 }
+
+export type VoteRequest =
+  | { value: 1; reason: WellDoneReason | null }
+  | { value: -1; reason: UndercookedReason | null }
+  | { value: null }
 
 export type SkillStatsResponse = {
   data: SkillStats

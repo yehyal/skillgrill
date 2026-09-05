@@ -122,6 +122,7 @@ export const skillVotes = pgTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     value: smallint("value").notNull(),
+    reason: text("reason"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -137,6 +138,10 @@ export const skillVotes = pgTable(
     skillIndex: index("skill_votes_skill_idx").on(table.skillId),
     userIndex: index("skill_votes_user_idx").on(table.userId),
     valueCheck: check("skill_votes_value_check", sql`${table.value} in (-1, 1)`),
+    reasonValueCheck: check(
+      "skill_votes_reason_value_check",
+      sql`${table.reason} is null or ((${table.value} = 1 and ${table.reason} in ('works_reliably', 'triggers_well', 'lightweight')) or (${table.value} = -1 and ${table.reason} in ('does_not_work', 'misses_triggers', 'triggers_too_often', 'too_heavy')))`
+    ),
   })
 )
 

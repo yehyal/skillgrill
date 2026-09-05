@@ -3,6 +3,7 @@ import { ArrowRightIcon, ArrowUpIcon } from "@radix-ui/react-icons"
 import type { SkillListItem } from "@skill-grill/shared"
 
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
+import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
 import { Badge } from "@/components/ui/badge"
 import { formatAgentLabel, formatTagLabel } from "@/lib/skills"
 
@@ -34,6 +35,7 @@ export function SkillCard({ skill, index }: { skill: SkillListItem; index: numbe
       <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">
         {skill.description}
       </p>
+      <SkillTopReasonLabel reason={skill.topReason} className="mt-3 w-fit" />
 
       <div className="mt-auto space-y-4 pt-6">
         <div className="flex flex-wrap gap-1.5">

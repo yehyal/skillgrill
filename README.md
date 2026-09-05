@@ -78,8 +78,23 @@ pnpm db:seed     # Seed or update the 20 local skills
 pnpm db:studio   # Open Drizzle Studio
 pnpm test       # Run package tests
 pnpm build      # Build both apps
+pnpm --filter @skill-grill/web build:pages  # Future Cloudflare Pages static export
 pnpm check      # Run all verification commands
 ```
+
+## Future Cloudflare Pages publishing
+
+The future frontend publishing boundary is Cloudflare Pages for the static web export, with the existing Cloudflare Worker continuing to host the API. The Pages build should eventually run only in the web workspace:
+
+```sh
+pnpm --filter @skill-grill/web build:pages
+```
+
+That command enables the guarded static-export mode and writes the Pages artifact to `apps/web/out`. It is intentionally separate from the root `pnpm build` command and is not part of the current development workflow.
+
+The later publishing step will obtain active skill records at build time, add `generateStaticParams()` for `/skills/[slug]`, and generate per-skill metadata. A new Pages build will be required whenever static skill content or SEO metadata changes. Votes, comments, authentication, and other user-specific state remain client-loaded from the separate API Worker after hydration, so those changes do not require rebuilding the frontend.
+
+The current web app has no Next.js route handlers, Server Actions, request-time cookies or headers, rewrites, or middleware requirements. This keeps the future Pages export boundary explicit without adding `generateStaticParams()`, fetching catalog data, generating HTML, creating `out`, or introducing a frontend Worker.
 
 ## API cache policy
 

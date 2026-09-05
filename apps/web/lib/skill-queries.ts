@@ -20,6 +20,7 @@ import type {
   SkillMeResponse,
   SkillStats,
   SkillStatsResponse,
+  VoteRequest,
   VoteResponse,
   VoteValue,
 } from "@skill-grill/shared"
@@ -112,7 +113,7 @@ type VoteMutationVariables = {
   slug: string
   userId: string
   accessToken: string
-  value: VoteValue
+  request: VoteRequest
   baseStats: SkillStats
 }
 
@@ -127,8 +128,8 @@ export function useSkillVoteMutation() {
   const queryClient = useQueryClient()
 
   return useMutation<VoteResponse, Error, VoteMutationVariables, VoteMutationContext>({
-    mutationFn: ({ slug, accessToken, value }) =>
-      submitSkillVote(slug, accessToken, { value }),
+    mutationFn: ({ slug, accessToken, request }) =>
+      submitSkillVote(slug, accessToken, request),
     onMutate: async (variables) => {
       const statsKey = skillQueryKeys.stats(variables.slug)
       const detailKey = skillQueryKeys.detail(variables.slug)
@@ -152,15 +153,17 @@ export function useSkillVoteMutation() {
       const optimisticStats = applyVoteTransition(
         currentStats,
         currentVote,
-        variables.value
+        variables.request.value
       )
+      const optimisticReason =
+        variables.request.value === null ? null : variables.request.reason
 
       queryClient.setQueryData<SkillStatsResponse>(statsKey, { data: optimisticStats })
       queryClient.setQueryData<SkillDetailResponse>(detailKey, (current) =>
         current ? withStats(current, optimisticStats) : current
       )
       queryClient.setQueryData<SkillMeResponse>(meKey, {
-        data: { myVote: variables.value },
+        data: { myVote: variables.request.value, myReason: optimisticReason },
       })
       updateListCaches(queryClient, variables.baseStats.skillId, optimisticStats)
 
@@ -189,6 +192,9 @@ export function useSkillVoteMutation() {
         downvotesCount: response.data.downvotesCount,
         commentsCount: response.data.commentsCount,
         score: response.data.score,
+        reasonCounts: response.data.reasonCounts,
+        reasonedVotesCount: response.data.reasonedVotesCount,
+        unreasonedVotesCount: response.data.unreasonedVotesCount,
       }
 
       queryClient.setQueryData<SkillStatsResponse>(skillQueryKeys.stats(variables.slug), {
@@ -200,9 +206,14 @@ export function useSkillVoteMutation() {
       )
       queryClient.setQueryData<SkillMeResponse>(
         skillQueryKeys.me(variables.slug, variables.userId),
-        { data: { myVote: response.data.myVote } }
+        { data: { myVote: response.data.myVote, myReason: response.data.myReason } }
       )
-      updateListCaches(queryClient, authoritativeStats.skillId, authoritativeStats)
+      updateListCaches(
+        queryClient,
+        authoritativeStats.skillId,
+        authoritativeStats,
+        response.data.reasonCounts[0] ?? null
+      )
     },
     onSettled: (_response, _error, variables) => {
       void Promise.all([
@@ -472,7 +483,8 @@ function withStats(detail: SkillDetailResponse, stats: SkillStats): SkillDetailR
 function updateListCaches(
   queryClient: QueryClient,
   skillId: string,
-  stats: SkillStats
+  stats: SkillStats,
+  topReason?: SkillStats["reasonCounts"][number] | null
 ) {
   queryClient.setQueriesData<SkillListResponse>(
     { queryKey: skillQueryKeys.lists() },
@@ -488,6 +500,7 @@ function updateListCaches(
                     downvotesCount: stats.downvotesCount,
                     commentsCount: stats.commentsCount,
                     score: stats.score,
+                    ...(topReason !== undefined ? { topReason } : {}),
                   }
                 : skill
             ),
