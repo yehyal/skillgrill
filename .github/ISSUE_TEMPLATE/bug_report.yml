@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a reproducible problem in Skill Grill.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Skill Grill. Please remove secrets and personal or production data before submitting.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: What steps reproduce the problem?
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS, browser, Node version, pnpm version, and relevant device details.
+      placeholder: macOS 15, Chrome 136, Node 24, pnpm 10.33.2
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Paste relevant logs after removing tokens, URLs with credentials, personal data, and other secrets.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I have removed secrets, personal information, and production data from this report.
+          required: true

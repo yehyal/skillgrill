@@ -1,0 +1,38 @@
+name: Feature request
+description: Describe a user problem and a focused product outcome.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Strong proposals explain the problem first and keep the first version small enough to evaluate.
+  - type: textarea
+    id: user_problem
+    attributes:
+      label: User problem
+      description: Who is affected, and what are they unable to do or understand today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_outcome
+    attributes:
+      label: Proposed outcome
+      description: What should be different for the user after this is addressed?
+    validations:
+      required: true
+  - type: textarea
+    id: mvp_fit
+    attributes:
+      label: MVP fit
+      description: What is the smallest useful version, and why does it fit Skill Grill's current direction?
+    validations:
+      required: true
+  - type: checkboxes
+    id: discussion
+    attributes:
+      label: Scope check
+      options:
+        - label: I understand that significant features or architectural changes should be discussed before implementation.
+          required: true
