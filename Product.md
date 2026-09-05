@@ -757,8 +757,8 @@ counters, skill timestamps, or seven-day movement events. A vote-value change
 continues to update counters and `skill_vote_events` in the same transaction.
 
 For detail and stats responses, reason counts use current rows in
-`skill_votes`, exclude unreasoned votes, and become public only at three votes.
-The response returns up to two eligible reasons sorted by count descending and
+`skill_votes`, exclude unreasoned votes, and become public after one vote at
+launch. The response returns up to three eligible reasons sorted by count descending and
 reason key ascending, plus explicit `reasonedVotesCount` and
 `unreasonedVotesCount` completion metrics. List responses return only the first
 eligible `topReason`, aggregated in one query for the current page.

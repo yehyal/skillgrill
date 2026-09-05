@@ -30,10 +30,8 @@ export const VOTE_REASON_LABELS: Record<VoteReason, string> = {
 
 export type VoteReasonUiVariant = "vote-first" | "always-visible"
 
-export const DEV_VOTE_REASON_UI: VoteReasonUiVariant = "vote-first"
-
 export const voteReasonUi: VoteReasonUiVariant =
-  process.env.NODE_ENV === "development" ? DEV_VOTE_REASON_UI : "vote-first"
+  process.env.NODE_ENV === "development" ? "vote-first" : "vote-first"
 
 export function getReasonValue(reason: VoteReason): 1 | -1 {
   return UNDERCOOKED_REASONS.includes(reason as UndercookedReason) ? -1 : 1

@@ -206,7 +206,7 @@ export function SkillVoteBox({
         clearPendingVoteIntent()
         setPendingIntent(null)
 
-        if (voteReasonUi === "vote-first" && intent.reason === null && myVote === null) {
+        if (voteReasonUi === "vote-first" && intent.reason === null) {
           setReasonPrompt(intent.value)
         }
       },

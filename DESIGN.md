@@ -42,12 +42,12 @@ The reason labels are:
 - Undercooked: Did not deliver, Missed when needed, Triggered too often, Used too much context.
 
 The read-only aggregate section is titled **What people noticed** and shows at
-most two neutral badges. A reason is hidden until at least three current votes
-share it. The development-only completion line is `Reason response: N with · M
+most three neutral badges. At launch, a reason is visible after one current
+vote; this threshold can be raised once the directory has enough responses. The development-only completion line is `Reason response: N with · M
 without`; production does not expose completion metrics.
 
 Two presentational variants remain available for manual local comparison. The
-temporary `DEV_VOTE_REASON_UI` constant selects them in development, while
+temporary `voteReasonUi` constant selects them in development, while
 production always uses vote-first. This is not an A/B test and has no
 assignment, cookie, analytics, or experiment system. Remove the selector after
 the final direction is chosen.

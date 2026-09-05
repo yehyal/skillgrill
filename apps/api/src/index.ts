@@ -1102,7 +1102,7 @@ function getReasonCountRows(database: Database, skillIds: string[]) {
     .from(skillVotes)
     .where(and(inArray(skillVotes.skillId, skillIds), isNotNull(skillVotes.reason)))
     .groupBy(skillVotes.skillId, skillVotes.reason, skillVotes.value)
-    .having(sql`count(*) >= 3`)
+    .having(sql`count(*) >= 1`)
     .orderBy(asc(skillVotes.skillId), desc(reasonCount), asc(skillVotes.reason))
 }
 
@@ -1122,7 +1122,7 @@ async function getSkillReasonStats(database: Database, skillId: string) {
     reasonCounts: reasonRows
       .map(toVoteReasonCount)
       .filter((reason): reason is VoteReasonCount => reason !== null)
-      .slice(0, 2),
+      .slice(0, 3),
     reasonedVotesCount: Number(completionRows[0]?.reasonedVotesCount ?? 0),
     unreasonedVotesCount: Number(completionRows[0]?.unreasonedVotesCount ?? 0),
   }

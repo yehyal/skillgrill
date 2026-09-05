@@ -31,7 +31,7 @@ export function SkillReasonSummary({ stats }: { stats: SkillStats }) {
       </div>
       {hasPublicReasons ? (
         <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Top vote reasons">
-          {stats.reasonCounts.slice(0, 2).map((reason) => (
+        {stats.reasonCounts.slice(0, 3).map((reason) => (
             <span
               key={reason.reason}
               className="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
