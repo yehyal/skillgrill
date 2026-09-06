@@ -1,7 +1,7 @@
 # Skill Grill
 
 <p align="center">
-  <img src="apps/web/public/assets/skill-grill-icon.svg" alt="Skill Grill" width="112" />
+  <img src="apps/web/public/assets/skill-grill-icon-repo.svg" alt="Skill Grill" width="112" />
 </p>
 
 <p align="center"><strong>Find AI agent skills that are worth putting to work.</strong></p>

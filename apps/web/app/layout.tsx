@@ -11,8 +11,18 @@ import { siteConfig } from "@/lib/site-config"
 import "./globals.css"
 
 export const metadata: Metadata = {
+  metadataBase: siteConfig.siteUrl ? new URL(siteConfig.siteUrl) : undefined,
   title: siteConfig.name,
   description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+  ...(siteConfig.indexable
+    ? {}
+    : {
+        robots: {
+          index: false,
+          follow: false,
+          noarchive: true,
+        },
+      }),
 }
 
 export default function RootLayout({

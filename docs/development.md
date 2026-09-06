@@ -56,7 +56,7 @@ The future Pages export command is intentionally separate from normal developmen
 pnpm --filter @skill-grill/web build:pages
 ```
 
-Do not use that command as a substitute for local development. It is documented for the future publishing boundary and currently remains blocked by the dynamic skill route until static parameters are supplied.
+Do not use that command as a substitute for local development. Until the future publishing step supplies skill parameters, it emits no skill-detail HTML and arbitrary `/skills/<slug>/` paths are not exported.
 
 ## Local Verification
 

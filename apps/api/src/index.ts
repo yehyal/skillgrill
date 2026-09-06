@@ -1448,7 +1448,7 @@ function getSkillListRows(
     query.sort === "score"
       ? desc(skills.score)
       : query.sort === "newest"
-        ? desc(skills.createdAt)
+        ? [desc(skills.createdAt), asc(skills.id)]
         : [desc(skills.upvotesCount), desc(skills.commentsCount), asc(skills.name)]
 
   const orderByClauses = Array.isArray(orderBy) ? orderBy : [orderBy]
