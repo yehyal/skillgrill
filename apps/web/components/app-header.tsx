@@ -47,7 +47,7 @@ export function AppHeader() {
   const errorMessage =
     actionError ??
     (status === "unavailable"
-      ? "GitHub sign-in is unavailable until Supabase is configured."
+      ? "Sign-in is temporarily unavailable. You can still browse all skills."
       : error?.message
         ? `GitHub sign-in failed. ${error.message}`
         : null)
@@ -91,10 +91,11 @@ export function AppHeader() {
   }
 
   return (
-    <header className="border-b border-border bg-background/95">
-      <PageContainer className="flex min-h-14 items-center justify-between gap-2 sm:gap-4">
+    <header className="border-b border-border bg-card">
+      <PageContainer className="flex min-h-16 items-center justify-between gap-2 sm:gap-4">
         <Link
           href="/"
+          aria-label="Skill Grill home"
           className="flex min-w-0 items-center gap-2 rounded-sm text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:gap-3"
         >
           <span
@@ -106,7 +107,7 @@ export function AppHeader() {
               alt=""
               width={128}
               height={128}
-              className="size-full object-contain invert"
+              className="size-full object-contain invert dark:invert-0"
               priority
             />
           </span>
@@ -119,7 +120,7 @@ export function AppHeader() {
           <nav aria-label="Primary navigation" className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/skills"
-              aria-current={pathname.startsWith("/skills") ? "page" : undefined}
+              aria-current={pathname?.startsWith("/skills") ? "page" : undefined}
               className="rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <span className="sm:hidden">Browse</span>
@@ -168,6 +169,7 @@ export function AppHeader() {
               variant="outline"
               onClick={() => void handleSignIn()}
               disabled={status === "unavailable" || isSigningIn}
+              aria-label={status === "unavailable" ? "GitHub sign-in unavailable" : isSigningIn ? "Opening GitHub" : "Sign in with GitHub"}
               aria-describedby={errorMessage ? "auth-message" : undefined}
             >
               {status === "unavailable" ? (

@@ -128,7 +128,7 @@ function CallbackView() {
           <p className="text-sm font-medium text-primary">Sign-in problem</p>
           <h1
             id="callback-title"
-            className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-card-foreground"
+            className="mt-3 text-2xl font-semibold tracking-normal text-card-foreground"
           >
             We could not finish your GitHub sign-in.
           </h1>

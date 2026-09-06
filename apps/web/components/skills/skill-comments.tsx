@@ -129,7 +129,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
   }
 
   return (
-    <section className="mt-12 border-t border-border pt-8 sm:mt-16 sm:pt-10" aria-labelledby="comments-title">
+    <section className="mt-12 sm:mt-16" aria-labelledby="comments-title">
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
           Discussion
@@ -147,7 +147,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
       <div className="mt-7">
         {status === "authenticated" && author && !commentsQuery.isSuccess ? (
           <div
-            className="border-y border-border py-5"
+            className="border-b border-border py-5"
             role={commentsQuery.error ? "alert" : "status"}
           >
             <p className="text-sm font-medium">Load the discussion before posting.</p>
@@ -170,7 +170,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             ) : null}
           </div>
         ) : canCompose && author ? (
-          <form onSubmit={submitComment} className="border-y border-border py-5">
+          <form onSubmit={submitComment} className="border-b border-border py-5">
             <label htmlFor="comment-body" className="text-sm font-medium">
               Share your experience
             </label>
@@ -199,13 +199,13 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             </Button>
           </form>
         ) : status === "loading" ? (
-          <div className="border-y border-border py-5" role="status">
+          <div className="border-b border-border py-5" role="status">
             <Skeleton className="h-5 w-48" />
             <Skeleton className="mt-3 h-10 w-full" />
             <span className="sr-only">Checking your account…</span>
           </div>
         ) : (
-          <div className="border-y border-border py-5">
+          <div className="border-b border-border py-5">
             <p className="text-sm font-medium">Tried this skill?</p>
             <GitHubSignInPrompt
               className="mt-2"
@@ -217,7 +217,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
         {commentsQuery.isPending ? (
           <CommentListSkeleton />
         ) : commentsQuery.error && comments.length === 0 ? (
-          <div className="border-y border-border py-7" role="alert">
+          <div className="border-b border-border py-7" role="alert">
             <p className="text-sm font-medium">The discussion is unavailable right now.</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Try again in a moment to load the latest comments.
@@ -234,7 +234,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             </Button>
           </div>
         ) : comments.length === 0 ? (
-          <div className="border-y border-border py-7">
+          <div className="border-b border-border py-7">
             <p className="text-sm font-medium">No firsthand takes yet.</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Be the first to say whether it delivered.
@@ -464,7 +464,7 @@ function ReportCommentDialog({
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
         aria-modal="true"
-        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20 sm:w-[calc(100%-2rem)]"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-overlay sm:w-[calc(100%-2rem)]"
         onClose={() => setShowDialog(false)}
         onClick={(event) => {
           if (event.target === event.currentTarget) {
@@ -478,7 +478,7 @@ function ReportCommentDialog({
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">
                 Discussion safety
               </p>
-              <h2 id={titleId} className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
+              <h2 id={titleId} className="mt-3 text-2xl font-semibold tracking-normal">
                 Report this comment
               </h2>
             </div>

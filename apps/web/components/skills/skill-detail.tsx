@@ -128,7 +128,7 @@ function SkillDetailContent({
       <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-14">
         <div className="min-w-0">
           <header>
-            <h1 className="max-w-[18ch] break-words text-4xl font-semibold leading-none sm:text-5xl">
+            <h1 className="max-w-[18ch] break-words text-3xl font-semibold leading-tight sm:text-4xl">
               {skill.name}
             </h1>
             <p className="mt-5 max-w-[66ch] text-base leading-7 text-muted-foreground">
@@ -154,15 +154,16 @@ function SkillDetailContent({
             copied={copied}
             onCopy={onCopy}
           />
-
-          <SkillFiles files={skill.files} />
-
-          <SkillComments slug={skill.slug} stats={stats} />
         </div>
 
-        <aside className="min-w-0 lg:pt-1 mt-28"  >
+        <aside className="min-w-0 self-start lg:row-span-2 lg:pt-1">
           <SkillMetadata skill={skill} />
         </aside>
+
+        <div className="min-w-0 lg:col-start-1">
+          <SkillFiles files={skill.files} />
+          <SkillComments slug={skill.slug} stats={stats} />
+        </div>
       </div>
     </>
   )
@@ -217,21 +218,23 @@ function InstallBlock({
       </div>
 
       {command ? (
-        <div className="mt-4 border border-primary/35 bg-card p-3 sm:p-2">
-          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-            <span className="text-gray-500">$</span>
+        <div className="mt-4 rounded-md border border-border bg-card p-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="font-mono text-sm text-muted-foreground" aria-hidden="true">$</span>
             <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-sm text-foreground">
-              npx {command}
+              {command}
             </code>
             <Button
               type="button"
               size="sm"
               aria-label={copied ? "Install command copied" : "Copy install command"}
               title={copied ? "Install command copied" : "Copy install command"}
-              className="w-full shrink-0 sm:w-auto"
-              onClick={() => onCopy(`npx ${command}`)}
+              variant="outline"
+              className="shrink-0 sm:w-24"
+              onClick={() => onCopy(command)}
             >
               {copied ? <CheckIcon aria-hidden="true" /> : <ClipboardIcon aria-hidden="true" />}
+              <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
             </Button>
           </div>
         </div>
@@ -250,7 +253,7 @@ function SkillMetadata({
   skill: SkillDetailResponse["data"]
 }) {
   return (
-    <section className="border-y border-border py-5" aria-labelledby="metadata-title">
+    <section className="rounded-md border border-border bg-muted/50 p-5" aria-labelledby="metadata-title">
       <h2 id="metadata-title" className="text-sm font-semibold">Skill details</h2>
       <dl className="mt-5 grid gap-5 text-sm">
         <div>
@@ -334,13 +337,13 @@ export function SkillDetailSkeleton() {
           <Skeleton className="mt-2 h-5 w-4/5 max-w-xl" />
           <Skeleton className="mt-6 h-32 w-full max-w-xl" />
           <Skeleton className="mt-8 h-24 w-full max-w-2xl" />
-          <div className="mt-10 border-y border-border py-6">
+          <div className="mt-10 border-t border-border py-6">
             <Skeleton className="h-3 w-12" />
             <Skeleton className="mt-3 h-6 w-28" />
             <Skeleton className="mt-5 h-9 w-32" />
             <Skeleton className="mt-5 h-40 w-full max-w-2xl" />
           </div>
-          <div className="mt-12 border-t border-border pt-8">
+          <div className="mt-12">
             <Skeleton className="h-6 w-44" />
             <Skeleton className="mt-6 h-24 w-full max-w-2xl" />
           </div>

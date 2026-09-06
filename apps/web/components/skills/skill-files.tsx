@@ -54,7 +54,7 @@ export function SkillFiles({ files }: { files: SkillFile[] }) {
   }
 
   return (
-    <section className="mt-10 border-y border-border py-6" aria-labelledby="files-title">
+    <section className="border-t border-border py-6" aria-labelledby="files-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Files</p>
@@ -77,7 +77,7 @@ export function SkillFiles({ files }: { files: SkillFile[] }) {
 
       {file ? (
         <>
-          <div className="mt-5 flex gap-1 border-b border-border" role="tablist" aria-label="Skill file view">
+          <div className="mt-5 flex gap-1 border-b border-border" role="group" aria-label="Skill file view">
             <FileViewTab active={view === "preview"} onClick={() => setView("preview")}>
               Preview
             </FileViewTab>
@@ -88,8 +88,8 @@ export function SkillFiles({ files }: { files: SkillFile[] }) {
 
           <div
             id={`skill-file-${view}`}
-            className="mt-5 min-w-0"
-            role="tabpanel"
+            className="mt-5 min-w-0 max-h-[36rem] overflow-auto rounded-sm pr-2"
+            role="region"
             aria-label={`${view === "preview" ? "Preview" : "Source"} of SKILL.md`}
             tabIndex={0}
           >
@@ -123,8 +123,7 @@ function FileViewTab({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={active}
+      aria-pressed={active}
       className={cn(
         "border-b-2 px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
         active

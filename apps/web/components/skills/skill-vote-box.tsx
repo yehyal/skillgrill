@@ -232,14 +232,14 @@ export function SkillVoteBox({
 
   return (
     <section
-      className="h-fit w-full border-y border-border py-3"
+      className="h-fit w-full border-y border-border py-5"
       aria-labelledby="verdict-title"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p
             id="verdict-title"
-            className="font-mono text-lg uppercase tracking-[0.18em] text-primary"
+            className="text-base font-semibold text-foreground"
           >
             The verdict
           </p>
@@ -256,7 +256,7 @@ export function SkillVoteBox({
             aria-label={`Mark this skill Well done. ${stats.upvotesCount} positive votes.`}
             disabled={controlsDisabled}
             onClick={() => handleVote(1)}
-            className="gap-1.5 px-2.5"
+            className="gap-2 px-3 data-[verdict=1]:aria-pressed:border-success data-[verdict=1]:aria-pressed:bg-success data-[verdict=1]:aria-pressed:text-success-foreground data-[verdict=-1]:aria-pressed:border-warning data-[verdict=-1]:aria-pressed:bg-warning data-[verdict=-1]:aria-pressed:text-warning-foreground"
           >
             <span className="inline-flex items-center gap-1.5">
               <ThickArrowUpIcon aria-hidden="true" />
@@ -273,7 +273,7 @@ export function SkillVoteBox({
             aria-label={`Mark this skill Undercooked. ${stats.downvotesCount} negative votes.`}
             disabled={controlsDisabled}
             onClick={() => handleVote(-1)}
-            className="gap-1.5 px-2.5"
+            className="gap-2 px-3 data-[verdict=1]:aria-pressed:border-success data-[verdict=1]:aria-pressed:bg-success data-[verdict=1]:aria-pressed:text-success-foreground data-[verdict=-1]:aria-pressed:border-warning data-[verdict=-1]:aria-pressed:bg-warning data-[verdict=-1]:aria-pressed:text-warning-foreground"
           >
             <span className="inline-flex items-center gap-1.5">
               <ThickArrowDownIcon aria-hidden="true" />
@@ -364,7 +364,7 @@ export function SkillVoteBox({
         aria-labelledby="sign-in-title"
         aria-describedby="sign-in-description"
         aria-modal="true"
-        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/20 sm:w-[calc(100%-2rem)]"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-md border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-overlay sm:w-[calc(100%-2rem)]"
         onClose={() => {
           setShowSignIn(false)
 
@@ -382,7 +382,7 @@ export function SkillVoteBox({
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.18em] text-primary">Your take</p>
-              <h2 id="sign-in-title" className="mt-3 text-2xl font-semibold tracking-[-0.05em]">
+              <h2 id="sign-in-title" className="mt-3 text-2xl font-semibold tracking-normal">
                 Sign in to rate
               </h2>
             </div>

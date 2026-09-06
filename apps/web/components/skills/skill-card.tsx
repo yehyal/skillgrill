@@ -46,7 +46,7 @@ export function SkillCard({ skill, index }: { skill: SkillListItem; index: numbe
           )) : <span className="text-xs text-muted-foreground">No tags listed</span>}
         </div>
 
-        <div className="flex min-w-0 items-end justify-between gap-4 border-t border-border pt-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
           <p className="min-w-0 truncate text-xs text-muted-foreground" title={skill.supportedAgents.map(formatAgentLabel).join(", ")}>
             {skill.supportedAgents.map(formatAgentLabel).join(" · ") || "Agent compatibility not listed"}
           </p>
