@@ -41,9 +41,11 @@ export default function RootLayout({
                 position="bottom-right"
                 closeButton
                 toastOptions={{
+                  style: { background: "var(--popover)", color: "var(--popover-foreground)", borderColor: "var(--border)" },
                   classNames: {
                     toast: "border-border bg-card text-card-foreground",
-                    description: "text-muted-foreground",
+                    description: "!text-muted-foreground",
+                    closeButton: "!border-border !bg-popover !text-popover-foreground",
                   },
                 }}
               />

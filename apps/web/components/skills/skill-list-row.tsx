@@ -4,6 +4,7 @@ import type { SkillListItem } from "@skill-grill/shared"
 
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
+import { cn } from "@/lib/utils"
 import { formatAgentLabel } from "@/lib/skills"
 
 type SkillListRowProps = {
@@ -13,8 +14,13 @@ type SkillListRowProps = {
 }
 
 export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps) {
+  const Heading = compact ? "h3" : "h2"
+
   return (
-    <article className="grid min-w-0 gap-3 border-b border-border py-4 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:items-start sm:gap-4">
+    <article className={cn(
+      "grid min-w-0 grid-cols-[1.5rem_minmax(0,1fr)] gap-x-3 gap-y-3 border-b border-border py-5 transition-colors hover:bg-muted/50 sm:gap-x-4",
+      !compact && "sm:grid-cols-[2rem_minmax(0,1fr)_auto]"
+    )}>
       <span className="font-mono text-xs tabular-nums text-muted-foreground" aria-label={`Rank ${rank}`}>
         {String(rank).padStart(2, "0")}
       </span>
@@ -25,9 +31,9 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
             href={`/skills/${encodeURIComponent(skill.slug)}`}
             className="min-w-0 rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
-            <h2 className="break-words text-base font-semibold leading-6 transition-colors hover:text-primary sm:text-[1.05rem]">
+            <Heading className="break-words text-base font-semibold leading-6 transition-colors hover:text-primary sm:text-[1.05rem]">
               {skill.name}
-            </h2>
+            </Heading>
           </Link>
           {skill.trendDelta !== undefined ? (
             <span
@@ -42,7 +48,7 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
         <p className="mt-1 truncate font-mono text-[0.6875rem] text-muted-foreground" title={skill.id}>
           {skill.id}
         </p>
-        <p className={compact ? "mt-2 line-clamp-1 text-sm leading-5 text-muted-foreground" : "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground"}>
+        <p className={compact ? "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground" : "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground"}>
           {skill.description}
         </p>
         <p className="mt-2 truncate text-xs text-muted-foreground" title={skill.supportedAgents.map(formatAgentLabel).join(", ")}>
@@ -51,7 +57,7 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
         {!compact ? <SkillTopReasonLabel reason={skill.topReason} className="mt-2" /> : null}
       </div>
 
-      <div className="flex items-center justify-between gap-4 sm:min-w-[10.5rem] sm:flex-col sm:items-end sm:gap-2">
+      <div className={cn("col-start-2 flex items-center justify-between gap-4", !compact && "sm:col-start-3 sm:min-w-[10.5rem] sm:flex-col sm:items-end sm:gap-3")}>
         <SkillVerdictCounts
           upvotesCount={skill.upvotesCount}
           downvotesCount={skill.downvotesCount}

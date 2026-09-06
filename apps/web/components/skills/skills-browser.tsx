@@ -36,6 +36,7 @@ import { useSkillListQuery } from "@/lib/skill-queries"
 const DIRECTORY_VIEW_KEY = "skill-grill:directory-view"
 const DIRECTORY_VIEW_EVENT = "skill-grill:directory-view-change"
 type DirectoryView = "list" | "card"
+let temporaryDirectoryView: DirectoryView = "list"
 
 export function SkillsBrowser() {
   const router = useRouter()
@@ -76,6 +77,10 @@ export function SkillsBrowser() {
 
     const nextQuery = nextParams.toString()
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+    if (updates.page) {
+      document.getElementById("directory-results")?.scrollIntoView({ block: "start" })
+      document.getElementById("results-heading")?.focus({ preventScroll: true })
+    }
   }
 
   function rankingHref(sort: "popular" | "trending") {
@@ -134,20 +139,18 @@ export function SkillsBrowser() {
         </div>
 
         <div className="mt-6 border-b border-border">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <nav aria-label="Skill ranking" role="tablist" className="flex gap-5">
+          <div className="flex items-end justify-between gap-3">
+            <nav aria-label="Skill ranking" className="flex gap-5">
               <Link
                 href={rankingHref("popular")}
-                role="tab"
-                aria-selected={currentSort === "popular"}
+                aria-current={currentSort === "popular" ? "page" : undefined}
                 className={`border-b-2 px-0.5 pb-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${currentSort === "popular" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
               >
                 All Time
               </Link>
               <Link
                 href={rankingHref("trending")}
-                role="tab"
-                aria-selected={currentSort === "trending"}
+                aria-current={currentSort === "trending" ? "page" : undefined}
                 className={`border-b-2 px-0.5 pb-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${currentSort === "trending" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
               >
                 Trending <span className="font-mono text-[0.6875rem]">7d</span>
@@ -155,7 +158,7 @@ export function SkillsBrowser() {
             </nav>
 
             <div className="flex items-center gap-2 pb-2 sm:pb-3" role="group" aria-label="Directory view">
-              <span className="mr-1 text-xs text-muted-foreground">View</span>
+              <span className="sr-only mr-1 text-xs text-muted-foreground sm:not-sr-only">View</span>
               <Button
                 type="button"
                 size="icon"
@@ -182,13 +185,13 @@ export function SkillsBrowser() {
           </div>
         </div>
 
-        <section aria-labelledby="discovery-controls" className="border-b border-border py-5">
+        <section aria-labelledby="discovery-controls" className="mt-5 grid gap-4 rounded-md border border-border bg-muted/50 p-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end">
           <h2 id="discovery-controls" className="sr-only">
             Search and filter skills
           </h2>
-          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-2 sm:flex-row">
+          <form onSubmit={handleSearchSubmit} className="flex items-end gap-2">
             <label className="min-w-0 flex-1">
-              <span className="sr-only">Search skills</span>
+              <span className="mb-2 block text-xs font-medium">Search skills</span>
               <span className="relative block">
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
@@ -203,12 +206,12 @@ export function SkillsBrowser() {
                 />
               </span>
             </label>
-            <Button type="submit" className="w-full sm:w-auto sm:px-5">
+            <Button type="submit" className="px-4">
               Search
             </Button>
           </form>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3">
             <label className="grid min-w-0 gap-2 text-xs font-medium text-foreground">
               <span>Tag</span>
               <Select value={currentTag} onValueChange={(value) => updateUrl({ tags: value === "all" ? null : value, page: null })}>
@@ -246,7 +249,7 @@ export function SkillsBrowser() {
         </section>
 
         <div className="mt-5 flex min-h-8 items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground" aria-live="polite">
+          <p id="results-heading" tabIndex={-1} className="text-sm text-muted-foreground" aria-live="polite">
             {result ? (
               <>
                 <span className="font-medium text-foreground">{result.pagination.total}</span>{" "}
@@ -265,7 +268,7 @@ export function SkillsBrowser() {
           ) : null}
         </div>
 
-        <div className="mt-2" aria-busy={listQuery.isFetching}>
+        <div id="directory-results" className="mt-2 scroll-mt-6" aria-busy={listQuery.isFetching}>
           {error ? (
             <div className="border-t border-destructive/40 py-10" role="alert">
               <p className="font-mono text-xs uppercase tracking-[0.14em] text-destructive">Could not load</p>
@@ -354,9 +357,9 @@ function subscribeToDirectoryView(onStoreChange: () => void) {
 function getDirectoryView(): DirectoryView {
   try {
     const storedView = window.localStorage.getItem(DIRECTORY_VIEW_KEY)
-    return storedView === "card" ? "card" : "list"
+    return storedView === "card" || storedView === "list" ? storedView : temporaryDirectoryView
   } catch {
-    return "list"
+    return temporaryDirectoryView
   }
 }
 
@@ -365,6 +368,7 @@ function getServerDirectoryView(): DirectoryView {
 }
 
 function setDirectoryView(nextView: DirectoryView) {
+  temporaryDirectoryView = nextView
   try {
     window.localStorage.setItem(DIRECTORY_VIEW_KEY, nextView)
   } catch {

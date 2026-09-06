@@ -135,7 +135,7 @@ describe("AuthProvider", () => {
     expect(screen.getByTestId("auth-status")).toHaveTextContent("unavailable")
     expect(screen.getByRole("button", { name: "GitHub sign-in unavailable" })).toBeDisabled()
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "GitHub sign-in is unavailable until Supabase is configured."
+      "Sign-in is temporarily unavailable. You can still browse all skills."
     )
   })
 

@@ -39,7 +39,7 @@ export function HomeDiscovery() {
               <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">The verdict</p>
               <h2 id="leaderboard-title" className="mt-2 text-xl font-semibold">What holds up</h2>
             </div>
-            <div className="flex gap-4" role="tablist" aria-label="Leaderboard ranking">
+            <div className="flex gap-4" role="group" aria-label="Leaderboard ranking">
               {([
                 ["popular", "All Time"],
                 ["trending", "Trending 7d"],
@@ -47,8 +47,7 @@ export function HomeDiscovery() {
                 <button
                   key={value}
                   type="button"
-                  role="tab"
-                  aria-selected={ranking === value}
+                  aria-pressed={ranking === value}
                   className={`border-b-2 pb-2 text-xs font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${ranking === value ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
                   onClick={() => setRanking(value)}
                 >
@@ -82,7 +81,7 @@ export function HomeDiscovery() {
                 </div>
               )
             ) : (
-              <SkillListSkeleton count={5} />
+              <SkillListSkeleton count={5} compact />
             )}
           </div>
         </section>
@@ -110,7 +109,7 @@ export function HomeDiscovery() {
                 </div>
               )
             ) : (
-              <SkillListSkeleton count={4} />
+              <SkillListSkeleton count={4} compact />
             )}
           </div>
         </section>
@@ -120,7 +119,7 @@ export function HomeDiscovery() {
         <PageContainer className="py-8 sm:py-10">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
             <div>
-              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Browse, try, contribute</p>
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">Make your experience count</p>
               <h2 id="contribute-title" className="mt-2 text-xl font-semibold">Browse. Try. Contribute.</h2>
             </div>
             <div className="grid gap-5 sm:grid-cols-3">

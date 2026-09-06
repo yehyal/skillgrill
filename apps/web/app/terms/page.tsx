@@ -13,17 +13,17 @@ export default function TermsPage() {
   return (
     <SiteShell>
       <main id="main-content" tabIndex={-1} className="flex-1">
-        <PageContainer className="py-10 sm:py-14 lg:py-16">
-          <header className="max-w-3xl border-b border-border pb-8 sm:pb-10">
+        <PageContainer className="py-8 sm:py-10 lg:py-12">
+          <header className="max-w-[70ch] border-b border-border pb-8 sm:pb-10">
             <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-primary">Community terms</p>
-            <h1 className="mt-3 text-4xl font-semibold leading-none sm:text-5xl">Terms of Use</h1>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Terms of Use</h1>
             <p className="mt-5 text-base leading-7 text-muted-foreground">
               Skill Grill is a place to compare AI agent skills through practical ratings and firsthand comments. These terms keep that exchange useful and safe.
             </p>
             <p className="mt-4 text-sm text-muted-foreground">{siteConfig.operator}. Effective September 2, 2026.</p>
           </header>
 
-          <div className="max-w-3xl pt-8 text-sm leading-6 text-muted-foreground sm:pt-10">
+          <div className="max-w-[70ch] pt-8 text-sm leading-7 text-secondary-foreground sm:pt-10">
             <div className="grid gap-10">
               <TermsSection title="Use Skill Grill responsibly">
                 <p>
@@ -74,7 +74,7 @@ export default function TermsPage() {
                   </a>
                 ) : (
                   <p className="border border-border bg-card p-4 text-xs leading-5" role="note">
-                    Contact email is not configured in this local environment. Set NEXT_PUBLIC_CONTACT_EMAIL before publishing.
+                    Contact email is not configured in this local environment. Visit the Contact page for the builder’s profile.
                   </p>
                 )}
               </TermsSection>

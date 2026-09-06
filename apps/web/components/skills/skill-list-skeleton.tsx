@@ -1,15 +1,18 @@
+import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function SkillListSkeleton({
   view = "list",
   count = 6,
+  compact = false,
 }: {
   view?: "list" | "card"
   count?: number
+  compact?: boolean
 }) {
   if (view === "card") {
     return (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Loading skills">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3" role="status" aria-label="Loading skills">
         {Array.from({ length: count }, (_, index) => (
           <div key={index} className="min-h-[18rem] rounded-md border border-border bg-card p-4 sm:p-5">
             <div className="flex justify-between">
@@ -34,7 +37,7 @@ export function SkillListSkeleton({
   return (
     <div className="border-t border-border" role="status" aria-label="Loading skills">
       {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="grid gap-3 border-b border-border py-4 sm:grid-cols-[2.5rem_minmax(0,1fr)_10.5rem] sm:gap-4">
+        <div key={index} className={cn("grid grid-cols-[1.5rem_minmax(0,1fr)] gap-3 border-b border-border py-5 sm:gap-4", !compact && "sm:grid-cols-[2rem_minmax(0,1fr)_10.5rem]")}>
           <Skeleton className="h-3 w-6" />
           <div>
             <Skeleton className="h-5 w-40" />
@@ -42,7 +45,7 @@ export function SkillListSkeleton({
             <Skeleton className="mt-3 h-4 w-full max-w-[34rem]" />
             <Skeleton className="mt-2 h-3 w-32" />
           </div>
-          <Skeleton className="h-4 w-28 sm:justify-self-end" />
+          <Skeleton className={cn("col-start-2 h-4 w-28", !compact && "sm:col-start-3 sm:justify-self-end")} />
         </div>
       ))}
       <span className="sr-only">Loading skills.</span>

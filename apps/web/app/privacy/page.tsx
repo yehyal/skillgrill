@@ -13,17 +13,17 @@ export default function PrivacyPage() {
   return (
     <SiteShell>
       <main id="main-content" tabIndex={-1} className="flex-1">
-        <PageContainer className="py-10 sm:py-14 lg:py-16">
-          <header className="max-w-3xl border-b border-border pb-8 sm:pb-10">
+        <PageContainer className="py-8 sm:py-10 lg:py-12">
+          <header className="max-w-[70ch] border-b border-border pb-8 sm:pb-10">
             <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-primary">Trust and privacy</p>
-            <h1 className="mt-3 text-4xl font-semibold leading-none sm:text-5xl">Privacy Policy</h1>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Privacy Policy</h1>
             <p className="mt-5 text-base leading-7 text-muted-foreground">
               This practical MVP policy explains what Skill Grill stores, what is public, and how to ask us to access or delete your account data.
             </p>
             <p className="mt-4 text-sm text-muted-foreground">{siteConfig.operator}. Last updated September 2, 2026.</p>
           </header>
 
-          <div className="max-w-3xl pt-8 text-sm leading-6 text-muted-foreground sm:pt-10">
+          <div className="max-w-[70ch] pt-8 text-sm leading-7 text-secondary-foreground sm:pt-10">
             <div className="grid gap-10">
               <PolicySection title="The short version">
                 <p>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
                   </a>
                 ) : (
                   <p className="mt-3 border border-border bg-card p-4 text-xs leading-5" role="note">
-                    The public contact address is not configured in this local environment. Set NEXT_PUBLIC_CONTACT_EMAIL before publishing.
+                    Email is currently unavailable. Visit the Contact page for the builder’s profile.
                   </p>
                 )}
               </PolicySection>

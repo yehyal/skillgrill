@@ -13,12 +13,12 @@ export default function ContactPage() {
   return (
     <SiteShell>
       <main id="main-content" tabIndex={-1} className="flex-1">
-        <PageContainer className="py-10 sm:py-14 lg:py-16">
+        <PageContainer className="py-8 sm:py-10 lg:py-12">
           <header className="max-w-2xl border-b border-border pb-8 sm:pb-10">
             <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-primary">
               Get in touch
             </p>
-            <h1 className="mt-3 text-4xl font-semibold leading-none sm:text-5xl">Contact Skill Grill</h1>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Contact Skill Grill</h1>
             <p className="mt-5 text-base leading-7 text-muted-foreground">
               Questions, corrections, partnership notes, and privacy requests can be sent to the project contact below.
             </p>
@@ -35,16 +35,15 @@ export default function ContactPage() {
                   {siteConfig.contactEmail}
                 </a>
               ) : (
-                <p className="mt-4 border border-border bg-card p-4 text-sm leading-6 text-muted-foreground" role="note">
-                  Contact email is not configured in this environment. Set NEXT_PUBLIC_CONTACT_EMAIL before publishing
-                  a public contact address.
+                <p className="mt-4 border border-border bg-card p-4 text-sm leading-7 text-secondary-foreground" role="note">
+                  Email is currently unavailable. You can reach the builder through the profile linked here.
                 </p>
               )}
             </section>
 
             <section aria-labelledby="builder-title">
               <h2 id="builder-title" className="text-2xl font-semibold leading-tight">Project identity</h2>
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">{siteConfig.operator}.</p>
+              <p className="mt-4 text-sm leading-7 text-secondary-foreground">{siteConfig.operator}.</p>
               <a
                 href={siteConfig.builderUrl}
                 target="_blank"
