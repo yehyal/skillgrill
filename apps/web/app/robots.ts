@@ -11,5 +11,8 @@ export default function robots(): MetadataRoute.Robots {
       ...(siteConfig.indexable ? { allow: "/" } : { disallow: "/" }),
     },
     ...(siteConfig.siteUrl ? { host: siteConfig.siteUrl } : {}),
+    ...(siteConfig.siteUrl && siteConfig.indexable
+      ? { sitemap: `${siteConfig.siteUrl}/sitemap.xml` }
+      : {}),
   }
 }

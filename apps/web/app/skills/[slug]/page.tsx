@@ -1,84 +1,63 @@
-import type { SkillListResponse } from "@skill-grill/shared"
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { SkillDetail } from "@/components/skills/skill-detail"
 import { SiteShell } from "@/components/site-shell"
-import { getApiBaseUrl } from "@/lib/api"
+import {
+  getPublishedSkillDetail,
+  getPublishedSkillSlugs,
+} from "@/lib/skill-publishing"
+import { siteConfig } from "@/lib/site-config"
 
 const isStaticExport = process.env.SKILL_GRILL_STATIC_EXPORT === "true"
-const staticExportSentinelSlug = "__static-export-sentinel__"
-const skillListPageSize = 50
 
 export const dynamicParams = false
 
 export async function generateStaticParams() {
-  if (isStaticExport) {
-    return [{ slug: staticExportSentinelSlug }]
-  }
-
-  const apiBaseUrl = getApiBaseUrl()
-
-  if (!apiBaseUrl) {
-    return []
-  }
-
-  const params: Array<{ slug: string }> = []
-  let page = 1
-
-  while (true) {
-    const requestUrl = new URL("/api/skills", apiBaseUrl)
-    requestUrl.searchParams.set("limit", String(skillListPageSize))
-    requestUrl.searchParams.set("page", String(page))
-    requestUrl.searchParams.set("sort", "newest")
-
-    const response = await fetch(requestUrl)
-
-    if (!response.ok) {
-      throw new Error(
-        `Could not load skill slugs for route generation (HTTP ${response.status}).`
-      )
-    }
-
-    const payload = (await response.json()) as unknown
-    const result = parseSkillListPage(payload, page)
-
-    params.push(...result.data.map((skill) => ({ slug: skill.slug })))
-
-    if (page >= result.pagination.totalPages || result.data.length === 0) {
-      return params
-    }
-
-    page += 1
-  }
+  const slugs = await getPublishedSkillSlugs({ required: isStaticExport })
+  return slugs.map((slug) => ({ slug }))
 }
 
-function parseSkillListPage(payload: unknown, page: number): SkillListResponse {
-  if (!isRecord(payload) || !Array.isArray(payload.data) || !isRecord(payload.pagination)) {
-    throw new Error(`Skill slug request returned a malformed response on page ${page}.`)
-  }
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const result = await getPublishedSkillDetail(slug, { required: isStaticExport })
 
-  const totalPages = payload.pagination.totalPages
-
-  if (typeof totalPages !== "number" || !Number.isInteger(totalPages) || totalPages < 0) {
-    throw new Error(`Skill slug request returned malformed pagination on page ${page}.`)
-  }
-
-  const data = payload.data.map((item, index) => {
-    if (!isRecord(item) || typeof item.slug !== "string" || item.slug.trim() === "") {
-      throw new Error(`Skill slug request returned an invalid slug at item ${index} on page ${page}.`)
+  if (!result) {
+    return {
+      title: `Skill not found | ${siteConfig.name}`,
+      robots: { index: false, follow: false },
     }
+  }
 
-    return item
-  })
+  const skill = result.data
+  const title = `${skill.name} | ${siteConfig.name}`
+  const description = toMetadataDescription(skill.description)
+  const canonicalPath = `/skills/${encodeURIComponent(skill.slug)}/`
 
   return {
-    data: data as SkillListResponse["data"],
-    pagination: payload.pagination as SkillListResponse["pagination"],
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      type: "website",
+      siteName: siteConfig.name,
+      title,
+      description,
+      url: canonicalPath,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+    robots: siteConfig.indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: false, noarchive: true },
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null
 }
 
 export default async function SkillDetailPage({
@@ -87,14 +66,45 @@ export default async function SkillDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const result = await getPublishedSkillDetail(slug, { required: isStaticExport })
 
-  if (isStaticExport && slug === staticExportSentinelSlug) {
+  if (!result) {
     notFound()
   }
 
+  const skill = result.data
+  const canonicalUrl = siteConfig.siteUrl
+    ? `${siteConfig.siteUrl}/skills/${encodeURIComponent(skill.slug)}/`
+    : undefined
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    name: skill.name,
+    description: skill.description,
+    ...(canonicalUrl ? { url: canonicalUrl } : {}),
+    ...(skill.sourceUrl ? { codeRepository: skill.sourceUrl } : {}),
+  }
+
   return (
-    <SiteShell>
-      <SkillDetail />
-    </SiteShell>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
+      />
+      <SiteShell>
+        <SkillDetail slug={slug} initialData={result} />
+      </SiteShell>
+    </>
   )
+}
+
+function toMetadataDescription(description: string) {
+  if (description.length <= 160) {
+    return description
+  }
+
+  const shortened = description.slice(0, 157).replace(/\s+\S*$/, "").trimEnd()
+  return `${shortened || description.slice(0, 157)}...`
 }

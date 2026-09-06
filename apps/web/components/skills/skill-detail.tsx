@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
 import {
   ArrowTopRightIcon,
   CheckIcon,
@@ -24,12 +23,16 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
-export function SkillDetail() {
-  const params = useParams<{ slug: string }>()
-  const slug = params.slug
+export function SkillDetail({
+  slug,
+  initialData,
+}: {
+  slug: string
+  initialData: SkillDetailResponse
+}) {
   const [copied, setCopied] = useState(false)
   const copiedResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const detailQuery = useSkillDetailQuery(slug)
+  const detailQuery = useSkillDetailQuery(slug, initialData)
   const statsQuery = useSkillStatsQuery(slug)
   const result = detailQuery.data
   const error = detailQuery.error

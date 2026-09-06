@@ -1,6 +1,6 @@
 # Deployment
 
-Skill Grill uses a prelaunch Cloudflare Pages frontend and a separately deployed Cloudflare Worker API. Pages serves the static export; the Worker continues to connect to Supabase for Postgres and authentication. The site is intentionally unindexed until the later skill-publishing release.
+Skill Grill uses a Cloudflare Pages frontend and a separately deployed Cloudflare Worker API. Pages serves the static export; the Worker continues to connect to Supabase for Postgres and authentication. Indexing is controlled explicitly through the Pages environment so a deployment can be verified before it is made discoverable.
 
 ## Cloudflare Pages
 
@@ -33,7 +33,9 @@ The expected Pages output directory is:
 apps/web/out
 ```
 
-The explicit Pages mode in `apps/web/next.config.ts` is enabled only by `SKILL_GRILL_STATIC_EXPORT=true`. Normal development and the general monorepo build remain in ordinary Next.js mode so dynamic skill routes continue to work. Next.js 16 requires at least one parameter for an exported dynamic route, so Pages mode generates a reserved not-found sentinel and the build script removes its output before deployment. No skill-detail HTML remains in the Pages artifact, and arbitrary skill paths return the custom 404 page.
+The explicit Pages mode in `apps/web/next.config.ts` is enabled only by `SKILL_GRILL_STATIC_EXPORT=true`. During that build, the web app reads every active skill slug from the configured Worker API, validates the catalog response, and generates one `/skills/<slug>/index.html` document per skill. Each page contains its catalog content, canonical metadata, Open Graph metadata, and structured data. TanStack Query uses the generated detail response as immediate content and refreshes it in the browser; votes, verdict reasons, and comments continue to load from the Worker.
+
+The build fails instead of publishing a partial catalog when the API is unavailable, reports malformed pagination or skill details, changes totals while pagination is in progress, or contains no active skills. A new Pages build is required after catalog additions, removals, slug changes, or metadata updates. Community interactions do not require a rebuild.
 
 Enable the GitHub integration for `main`, build caching, and pull request preview deployments. Do not use the Worker project or a monorepo-wide build command for this Pages project.
 
@@ -54,6 +56,8 @@ PNPM_VERSION=10.33.2
 
 For preview deployments, set the public API URL to `https://api.skillgrill.dev`, use the Pages preview URL as `NEXT_PUBLIC_SITE_URL` where practical, keep `NEXT_PUBLIC_CONTACT_EMAIL=contact@skillgrill.dev`, and keep `NEXT_PUBLIC_INDEXABLE=false`. Leave both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` unset in the preview environment so contributor and pull request builds cannot initiate production authentication.
 
+Keep `NEXT_PUBLIC_INDEXABLE=false` for the first production deployment of a new catalog. After checking the generated detail routes, metadata, sitemap, and 404 behavior on the custom domain, set it to `true` and redeploy. The indexable build advertises `/sitemap.xml` from `/robots.txt`; the prelaunch build disallows crawling and omits that sitemap directive.
+
 Never put database credentials, service-role keys, access tokens, or Worker secrets in Pages variables.
 
 ## Domains And Authentication
@@ -72,13 +76,17 @@ Verify mail delivery or forwarding for `contact@skillgrill.dev` before publishin
 
 Cloudflare Pages should serve `public/_headers`, which sets content-type sniffing, framing, referrer, and permissions policies. CSP remains deferred until the final Supabase and API origins are verified against OAuth and runtime requests.
 
-## Future Publishing Step
+## Catalog Publishing
 
-A future build-time publishing step will obtain active skill records before the static frontend is built. That step will replace the sentinel-only `generateStaticParams()` result with active skill paths and add per-skill metadata for `/skills/[slug]`, then produce the skill-detail HTML and SEO metadata included in that build.
+Seed or synchronize production before triggering the Pages build. The publishing build reads only active skills exposed by the Worker API. Verify these outputs before enabling indexing:
 
-Until that work exists, keep the Pages catalog empty and do not add placeholder skill pages. A new frontend build will be required whenever static skill content or SEO metadata should change. Votes, comments, and authentication remain client-loaded and do not require rebuilding the frontend.
+```text
+apps/web/out/skills/<known-slug>/index.html
+apps/web/out/sitemap.xml
+apps/web/out/robots.txt
+```
 
-When the catalog is ready, the publishing step will obtain active skill records, implement `generateStaticParams()` and per-skill `generateMetadata()`, add the sitemap and structured skill metadata, set `NEXT_PUBLIC_INDEXABLE=true`, and trigger a new Pages build. That release is also the point at which production skill records should be seeded.
+The known skill HTML should contain its name and description without requiring JavaScript. The sitemap should contain every active skill URL exactly once. An unknown skill path should continue to return the custom static 404 page.
 
 ## Secrets
 

@@ -57,10 +57,15 @@ export function useSkillListQuery(query: SkillListQuery) {
   })
 }
 
-export function useSkillDetailQuery(slug: string) {
+export function useSkillDetailQuery(
+  slug: string,
+  initialData?: SkillDetailResponse
+) {
   return useQuery({
     queryKey: skillQueryKeys.detail(slug),
     queryFn: ({ signal }) => fetchSkillDetail(slug, signal),
+    initialData,
+    initialDataUpdatedAt: initialData ? 0 : undefined,
     staleTime: 5 * 60_000,
     retry: shouldRetry,
     enabled: Boolean(slug),

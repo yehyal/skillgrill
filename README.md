@@ -13,11 +13,11 @@
   <a href="https://github.com/yehyal/skillgrill/actions/workflows/ci.yml"><img src="https://github.com/yehyal/skillgrill/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
 </p>
 
-Skill Grill is a pre-launch directory for discovering, trying, and judging skills made for AI agents. It keeps the catalog compact and practical: browse what a skill does, see which agents it supports, try the install command, and leave a community verdict.
+Skill Grill is a directory for discovering, trying, and judging skills made for AI agents. It keeps the catalog compact and practical: browse what a skill does, see which agents it supports, try the install command, and leave a community verdict.
 
 ## Status
 
-Skill Grill is under active development and is not deployed yet. The repository currently includes:
+Skill Grill is live at [skillgrill.dev](https://skillgrill.dev) and remains under active development. The repository currently includes:
 
 - A public home page, searchable directory, and skill detail pages.
 - All Time and seven-day Trending rankings, plus tag and agent filters.
@@ -26,13 +26,13 @@ Skill Grill is under active development and is not deployed yet. The repository 
 - Well-done and undercooked voting, optional verdict reasons, comments, reporting, and GitHub authentication.
 - Optimistic community interactions, light/dark/system themes, and a Cloudflare Worker API backed by Supabase and Drizzle.
 
-There is no live demo or catalog screenshot yet. Those will be added after deployment and real catalog data are available.
+The launch catalog is sourced from a separately maintained, validated import snapshot. Production imports are intentionally kept outside this public repository.
 
 ## Architecture
 
 The pnpm workspace contains a Next.js frontend, a Hono API running on Cloudflare Workers, and a shared Drizzle database package. The browser loads the frontend, then reads public catalog data and authenticated community data from the API. Supabase provides authentication and Postgres stores the catalog, votes, comments, reports, and vote-event history.
 
-The frontend is prepared for a future Cloudflare Pages static export. The API remains a separately deployed Worker; see the [deployment notes](docs/deployment.md).
+The frontend is published as a Cloudflare Pages static export with generated skill-detail pages. The API remains a separately deployed Worker; see the [deployment notes](docs/deployment.md).
 
 ## Start Here
 
