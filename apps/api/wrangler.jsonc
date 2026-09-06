@@ -3,9 +3,8 @@
   "name": "skill-grill-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-30",
-  "vars": {
-    "WEB_ORIGIN": "http://localhost:3000"
-  },
+  "workers_dev": true,
+  "preview_urls": false,
   "ratelimits": [
     {
       "name": "VOTE_RATE_LIMITER",
@@ -41,6 +40,6 @@
       "head_sampling_rate": 0.1
     }
   }
-  // Set DATABASE_URL, SUPABASE_URL, and SUPABASE_PUBLISHABLE_KEY in apps/api/.dev.vars locally.
-  // For deployed Workers, use Wrangler secrets for DATABASE_URL and the Supabase credentials.
+  // Set DATABASE_URL, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, and WEB_ORIGIN
+  // in apps/api/.dev.vars locally. For deployed Workers, use Wrangler secrets.
 }
