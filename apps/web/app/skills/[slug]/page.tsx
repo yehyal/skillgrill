@@ -1,17 +1,19 @@
 import type { SkillListResponse } from "@skill-grill/shared"
+import { notFound } from "next/navigation"
 
 import { SkillDetail } from "@/components/skills/skill-detail"
 import { SiteShell } from "@/components/site-shell"
 import { getApiBaseUrl } from "@/lib/api"
 
 const isStaticExport = process.env.SKILL_GRILL_STATIC_EXPORT === "true"
+const staticExportSentinelSlug = "__static-export-sentinel__"
 const skillListPageSize = 50
 
 export const dynamicParams = false
 
 export async function generateStaticParams() {
   if (isStaticExport) {
-    return []
+    return [{ slug: staticExportSentinelSlug }]
   }
 
   const apiBaseUrl = getApiBaseUrl()
@@ -79,7 +81,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
-export default function SkillDetailPage() {
+export default async function SkillDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+
+  if (isStaticExport && slug === staticExportSentinelSlug) {
+    notFound()
+  }
+
   return (
     <SiteShell>
       <SkillDetail />

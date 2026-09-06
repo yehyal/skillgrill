@@ -33,7 +33,7 @@ The expected Pages output directory is:
 apps/web/out
 ```
 
-The explicit Pages mode in `apps/web/next.config.ts` is enabled only by `SKILL_GRILL_STATIC_EXPORT=true`. Normal development and the general monorepo build remain in ordinary Next.js mode so dynamic skill routes continue to work. In Pages mode, `/skills/[slug]` supplies an empty static parameter list, so no skill-detail HTML is generated and arbitrary skill paths return the custom 404 page.
+The explicit Pages mode in `apps/web/next.config.ts` is enabled only by `SKILL_GRILL_STATIC_EXPORT=true`. Normal development and the general monorepo build remain in ordinary Next.js mode so dynamic skill routes continue to work. Next.js 16 requires at least one parameter for an exported dynamic route, so Pages mode generates a reserved not-found sentinel and the build script removes its output before deployment. No skill-detail HTML remains in the Pages artifact, and arbitrary skill paths return the custom 404 page.
 
 Enable the GitHub integration for `main`, build caching, and pull request preview deployments. Do not use the Worker project or a monorepo-wide build command for this Pages project.
 
@@ -74,7 +74,7 @@ Cloudflare Pages should serve `public/_headers`, which sets content-type sniffin
 
 ## Future Publishing Step
 
-A future build-time publishing step will obtain active skill records before the static frontend is built. That step will replace the empty `generateStaticParams()` result with active skill paths and add per-skill metadata for `/skills/[slug]`, then produce the skill-detail HTML and SEO metadata included in that build.
+A future build-time publishing step will obtain active skill records before the static frontend is built. That step will replace the sentinel-only `generateStaticParams()` result with active skill paths and add per-skill metadata for `/skills/[slug]`, then produce the skill-detail HTML and SEO metadata included in that build.
 
 Until that work exists, keep the Pages catalog empty and do not add placeholder skill pages. A new frontend build will be required whenever static skill content or SEO metadata should change. Votes, comments, and authentication remain client-loaded and do not require rebuilding the frontend.
 
