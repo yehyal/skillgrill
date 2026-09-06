@@ -1,0 +1,3 @@
+ALTER TABLE "skills" ADD COLUMN "skill_md" text;--> statement-breakpoint
+ALTER TABLE "skills" ADD COLUMN "estimated_tokens" integer;--> statement-breakpoint
+ALTER TABLE "skills" ADD CONSTRAINT "skills_skill_md_estimate_check" CHECK (("skills"."skill_md" is null and "skills"."estimated_tokens" is null) or ("skills"."skill_md" is not null and "skills"."estimated_tokens" is not null and "skills"."estimated_tokens" > 0 and "skills"."estimated_tokens" = ceil(char_length("skills"."skill_md") / 4.0)));

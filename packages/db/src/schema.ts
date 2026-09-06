@@ -58,6 +58,8 @@ export const skills = pgTable(
     sourceUrl: text("source_url"),
     installCommand: text("install_command"),
     docsUrl: text("docs_url"),
+    skillMd: text("skill_md"),
+    estimatedTokens: integer("estimated_tokens"),
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     supportedAgents: text("supported_agents")
       .array()
@@ -107,6 +109,10 @@ export const skills = pgTable(
     voteCountCheck: check(
       "skills_vote_count_check",
       sql`${table.upvotesCount} >= 0 and ${table.downvotesCount} >= 0 and ${table.commentsCount} >= 0`
+    ),
+    skillMdEstimateCheck: check(
+      "skills_skill_md_estimate_check",
+      sql`(${table.skillMd} is null and ${table.estimatedTokens} is null) or (${table.skillMd} is not null and ${table.estimatedTokens} is not null and ${table.estimatedTokens} > 0 and ${table.estimatedTokens} = ceil(char_length(${table.skillMd}) / 4.0))`
     ),
   })
 )

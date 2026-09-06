@@ -43,6 +43,13 @@
       "when": 1788543621264,
       "tag": "0005_overrated_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788717799944,
+      "tag": "0006_marvelous_blur",
+      "breakpoints": true
     }
   ]
 }

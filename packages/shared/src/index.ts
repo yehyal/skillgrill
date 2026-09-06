@@ -38,10 +38,17 @@ export type SkillDetail = {
   sourceUrl: string | null
   installCommand: string | null
   docsUrl: string | null
+  estimatedTokens: number | null
+  files: SkillFile[]
   tags: string[]
   supportedAgents: string[]
   createdAt: string
   updatedAt: string
+}
+
+export type SkillFile = {
+  path: "SKILL.md"
+  contents: string
 }
 
 export type SkillStats = {

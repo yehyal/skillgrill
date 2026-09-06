@@ -17,6 +17,7 @@ import { formatAgentLabel, formatSkillDate, formatTagLabel } from "@/lib/skills"
 import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
 import { SkillComments } from "@/components/skills/skill-comments"
+import { SkillFiles } from "@/components/skills/skill-files"
 import { SkillVoteBox } from "@/components/skills/skill-vote-box"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -133,6 +134,15 @@ function SkillDetailContent({
             <p className="mt-5 max-w-[66ch] text-base leading-7 text-muted-foreground">
               {skill.description}
             </p>
+            {skill.estimatedTokens !== null ? (
+              <Badge
+                variant="outline"
+                className="mt-4 font-mono text-[0.7rem]"
+                aria-label={`Approximately ${skill.estimatedTokens} tokens. This is a rough character-based estimate; actual tokenizer usage varies.`}
+              >
+                ≈ {formatEstimatedTokens(skill.estimatedTokens)} tokens
+              </Badge>
+            ) : null}
           </header>
 
           <div className="mt-6">
@@ -144,6 +154,8 @@ function SkillDetailContent({
             copied={copied}
             onCopy={onCopy}
           />
+
+          <SkillFiles files={skill.files} />
 
           <SkillComments slug={skill.slug} stats={stats} />
         </div>
@@ -322,6 +334,12 @@ export function SkillDetailSkeleton() {
           <Skeleton className="mt-2 h-5 w-4/5 max-w-xl" />
           <Skeleton className="mt-6 h-32 w-full max-w-xl" />
           <Skeleton className="mt-8 h-24 w-full max-w-2xl" />
+          <div className="mt-10 border-y border-border py-6">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="mt-3 h-6 w-28" />
+            <Skeleton className="mt-5 h-9 w-32" />
+            <Skeleton className="mt-5 h-40 w-full max-w-2xl" />
+          </div>
           <div className="mt-12 border-t border-border pt-8">
             <Skeleton className="h-6 w-44" />
             <Skeleton className="mt-6 h-24 w-full max-w-2xl" />
@@ -334,4 +352,12 @@ export function SkillDetailSkeleton() {
       <span className="sr-only">Loading skill details.</span>
     </div>
   )
+}
+
+function formatEstimatedTokens(tokens: number) {
+  if (tokens < 1000) {
+    return String(tokens)
+  }
+
+  return `${(tokens / 1000).toFixed(1).replace(/\.0$/, "")}K`
 }

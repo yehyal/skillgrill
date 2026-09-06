@@ -446,6 +446,8 @@ app.get("/api/skills/:slug", async (context) => {
         sourceUrl: skills.sourceUrl,
         installCommand: skills.installCommand,
         docsUrl: skills.docsUrl,
+        skillMd: skills.skillMd,
+        estimatedTokens: skills.estimatedTokens,
         tags: skills.tags,
         supportedAgents: skills.supportedAgents,
         createdAt: skills.createdAt,
@@ -472,10 +474,14 @@ app.get("/api/skills/:slug", async (context) => {
     }
 
     const reasonStats = await getSkillReasonStats(database.db, skill.id)
+    const { skillMd, ...skillWithoutFile } = skill
 
     const response: SkillDetailResponse = {
       data: {
-        ...skill,
+        ...skillWithoutFile,
+        files: skillMd
+          ? [{ path: "SKILL.md" as const, contents: skillMd }]
+          : [],
         score: skill.score ?? skill.upvotesCount - skill.downvotesCount,
         ...reasonStats,
         createdAt: skill.createdAt.toISOString(),

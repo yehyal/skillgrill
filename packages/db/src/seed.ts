@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/postgres-js"
 
 import { skills } from "./schema"
 
-type SeedSkill = {
+type SeedSkillCatalogEntry = {
   slug: string
   name: string
   description: string
@@ -14,7 +14,12 @@ type SeedSkill = {
   supportedAgents: string[]
 }
 
-export const seedSkills: SeedSkill[] = [
+type SeedSkill = SeedSkillCatalogEntry & {
+  skillMd: string
+  estimatedTokens: number
+}
+
+const seedSkillCatalog: SeedSkillCatalogEntry[] = [
   {
     slug: "pdf-compass",
     name: "PDF Compass",
@@ -217,6 +222,45 @@ export const seedSkills: SeedSkill[] = [
   },
 ]
 
+function createSkillMd(skill: SeedSkillCatalogEntry) {
+  return [
+    "---",
+    `name: ${skill.name}`,
+    `description: ${skill.description}`,
+    "tags:",
+    ...skill.tags.map((tag) => `  - ${tag}`),
+    "---",
+    "",
+    `# ${skill.name}`,
+    "",
+    skill.description,
+    "",
+    `Use this skill when the task matches its ${skill.tags.join(", ")} focus.`,
+    "",
+  ].join("\n")
+}
+
+function calculateEstimatedTokens(contents: string) {
+  return Math.ceil([...contents].length / 4)
+}
+
+function enrichSeedSkill(skill: SeedSkillCatalogEntry): SeedSkill {
+  const skillMd = createSkillMd(skill)
+  const estimatedTokens = calculateEstimatedTokens(skillMd)
+
+  if (skillMd.trim().length === 0 || estimatedTokens <= 0) {
+    throw new Error(`Seed skill ${skill.slug} must include a non-empty SKILL.md.`)
+  }
+
+  if (estimatedTokens !== Math.ceil([...skillMd].length / 4)) {
+    throw new Error(`Seed skill ${skill.slug} has an invalid SKILL.md estimate.`)
+  }
+
+  return { ...skill, skillMd, estimatedTokens }
+}
+
+export const seedSkills = seedSkillCatalog.map(enrichSeedSkill)
+
 async function seed() {
   const databaseUrl = process.env.DATABASE_URL
 
@@ -240,6 +284,8 @@ async function seed() {
           sourceUrl: skill.sourceUrl,
           installCommand: skill.installCommand,
           docsUrl: skill.docsUrl,
+          skillMd: skill.skillMd,
+          estimatedTokens: skill.estimatedTokens,
           tags: skill.tags,
           supportedAgents: skill.supportedAgents,
         })
@@ -251,6 +297,8 @@ async function seed() {
             sourceUrl: skill.sourceUrl,
             installCommand: skill.installCommand,
             docsUrl: skill.docsUrl,
+            skillMd: skill.skillMd,
+            estimatedTokens: skill.estimatedTokens,
             tags: skill.tags,
             supportedAgents: skill.supportedAgents,
             updatedAt: new Date(),
