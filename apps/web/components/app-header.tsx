@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { GitHubLogoIcon } from "@radix-ui/react-icons"
 import { getGitHubIdentity } from "@/lib/auth/identity"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { siteConfig } from "@/lib/site-config"
@@ -127,6 +128,18 @@ export function AppHeader() {
               <span className="hidden sm:inline">Browse skills</span>
             </Link>
           </nav>
+
+          <a
+            href={siteConfig.repositoryUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View Skill Grill on GitHub"
+            title="View Skill Grill on GitHub"
+            className="inline-flex min-h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <GitHubLogoIcon className="size-4" aria-hidden="true" />
+            <span className="hidden md:inline">GitHub</span>
+          </a>
 
           <ThemeToggle />
 

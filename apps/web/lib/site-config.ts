@@ -12,6 +12,7 @@ export const siteConfig = {
   operator: "Skill Grill, an independent project built by @yehyal",
   builderHandle: "@yehyal",
   builderUrl: "https://x.com/yehyal",
+  repositoryUrl: "https://github.com/yehyal/skillgrill",
   contactEmail,
   siteUrl,
   indexable,
