@@ -4,6 +4,10 @@ import type { SkillListItem } from "@skill-grill/shared"
 
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
+import {
+  SkillCatalogStaleWarning,
+  SkillPopularity,
+} from "@/components/skills/skill-popularity"
 import { Badge } from "@/components/ui/badge"
 import { formatTagLabel } from "@/lib/skills"
 import {
@@ -66,6 +70,10 @@ export function SkillCard({
       <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">
         {skill.description}
       </p>
+      <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <SkillPopularity popularity={skill.popularity} />
+        <SkillCatalogStaleWarning checkedAt={skill.freshness.catalogCheckedAt} />
+      </div>
       <SkillTopReasonLabel reason={skill.topReason} className="mt-3 w-fit" />
 
       <div className="mt-auto space-y-4 pt-6">

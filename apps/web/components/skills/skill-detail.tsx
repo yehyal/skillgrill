@@ -16,7 +16,13 @@ import {
   captureAnalytics,
   getTokenBucket,
 } from "@/lib/analytics"
-import { formatSkillDate, formatTagLabel } from "@/lib/skills"
+import {
+  formatExactCount,
+  formatSkillDate,
+  formatSkillDateTime,
+  formatTagLabel,
+  getCatalogFreshness,
+} from "@/lib/skills"
 import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
 import { SkillComments } from "@/components/skills/skill-comments"
@@ -288,10 +294,12 @@ function SkillMetadata({
 }: {
   skill: SkillDetailResponse["data"]
 }) {
+  const catalogFreshness = getCatalogFreshness(skill.freshness.catalogCheckedAt)
+
   return (
     <section className="rounded-md border border-border bg-muted/50 p-5" aria-labelledby="metadata-title">
       <h2 id="metadata-title" className="text-sm font-semibold">Skill details</h2>
-      <dl className="mt-5 grid gap-5 text-sm">
+      <dl className="mt-5 grid gap-6 text-sm">
         <div>
           <dt className="text-xs text-muted-foreground">Identifier</dt>
           <dd className="mt-1 break-all font-mono text-xs text-foreground">{skill.id}</dd>
@@ -303,23 +311,63 @@ function SkillMetadata({
           </dd>
         </div>
         <div>
+          <dt className="text-xs text-muted-foreground">Upstream reach</dt>
+          <dd className="mt-2 grid gap-2 text-foreground">
+            {skill.popularity.installs ? (
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-muted-foreground">skills.sh installs</span>
+                <span
+                  className="font-mono tabular-nums"
+                  title={formatExactCount(skill.popularity.installs.count) + " installs"}
+                >
+                  {formatExactCount(skill.popularity.installs.count)}
+                </span>
+              </div>
+            ) : null}
+            {skill.popularity.repositoryStars ? (
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-muted-foreground">GitHub repo stars</span>
+                <span
+                  className="font-mono tabular-nums"
+                  title={formatExactCount(skill.popularity.repositoryStars.count) + " repo stars"}
+                >
+                  {formatExactCount(skill.popularity.repositoryStars.count)}
+                </span>
+              </div>
+            ) : null}
+            {!skill.popularity.installs && !skill.popularity.repositoryStars ? (
+              <span className="text-muted-foreground">Not available</span>
+            ) : null}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Catalog status</dt>
+          <dd className="mt-2 text-foreground">
+            <span className={catalogFreshness.state === "stale" ? "text-warning" : undefined}>
+              {formatCatalogStatus(catalogFreshness.state, catalogFreshness.ageDays)}
+            </span>
+            {skill.freshness.catalogCheckedAt ? (
+              <time
+                dateTime={skill.freshness.catalogCheckedAt}
+                className="mt-1 block text-xs text-muted-foreground"
+              >
+                {formatSkillDateTime(skill.freshness.catalogCheckedAt)}
+              </time>
+            ) : null}
+            <span className="mt-3 block text-xs text-muted-foreground">
+              Catalog updated{" "}
+              <time dateTime={skill.freshness.catalogUpdatedAt}>
+                {formatSkillDate(skill.freshness.catalogUpdatedAt)}
+              </time>
+            </span>
+          </dd>
+        </div>
+        <div>
           <dt className="text-xs text-muted-foreground">Tags</dt>
           <dd className="mt-2 flex flex-wrap gap-1.5">
             {skill.tags.length > 0 ? skill.tags.map((tag) => (
               <Badge key={tag} variant="outline">{formatTagLabel(tag)}</Badge>
             )) : <span className="text-foreground">Not listed</span>}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">Added</dt>
-          <dd className="mt-1 text-foreground">
-            <time dateTime={skill.createdAt}>{formatSkillDate(skill.createdAt)}</time>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted-foreground">Updated</dt>
-          <dd className="mt-1 text-foreground">
-            <time dateTime={skill.updatedAt}>{formatSkillDate(skill.updatedAt)}</time>
           </dd>
         </div>
       </dl>
@@ -368,6 +416,25 @@ function SkillMetadata({
   )
 }
 
+function formatCatalogStatus(
+  state: ReturnType<typeof getCatalogFreshness>["state"],
+  ageDays: number | null,
+) {
+  if (state === "recent") {
+    return "Checked recently"
+  }
+
+  if (state === "aging") {
+    return "Checked " + ageDays + " days ago"
+  }
+
+  if (state === "stale") {
+    return "Needs recheck"
+  }
+
+  return "Not yet checked"
+}
+
 export function SkillDetailSkeleton() {
   return (
     <div role="status" aria-label="Loading skill details">
@@ -395,7 +462,7 @@ export function SkillDetailSkeleton() {
           </div>
         </div>
         <div>
-          <Skeleton className="h-72 w-full" />
+          <Skeleton className="h-[30rem] w-full" />
         </div>
       </div>
       <span className="sr-only">Loading skill details.</span>

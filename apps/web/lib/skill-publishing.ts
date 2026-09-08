@@ -152,6 +152,12 @@ function parseSkillListPage(payload: unknown, requestedPage: number): SkillListR
       )
     }
 
+    if (!isSkillListItemContract(item)) {
+      throw new Error(
+        `Skill slug request is missing the freshness or popularity contract at item ${index} on page ${requestedPage}.`
+      )
+    }
+
     return item
   })
 
@@ -184,6 +190,8 @@ function parseSkillDetailResponse(payload: unknown, requestedSlug: string) {
     nullableLinks.some((value) => value !== null && typeof value !== "string") ||
     !isNullableCompatibilityNote(skill.compatibilityNote) ||
     (skill.estimatedTokens !== null && !isPositiveInteger(skill.estimatedTokens)) ||
+    !isSkillFreshness(skill.freshness) ||
+    !isSkillPopularity(skill.popularity) ||
     !isStringArray(skill.tags) ||
     !isValidDateString(skill.createdAt) ||
     !isValidDateString(skill.updatedAt) ||
@@ -234,6 +242,59 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
+function isSkillListItemContract(value: Record<string, unknown>) {
+  return isSkillFreshness(value.freshness) && isSkillPopularity(value.popularity)
+}
+
+function isSkillFreshness(value: unknown) {
+  return (
+    isRecord(value) &&
+    isValidDateString(value.catalogUpdatedAt) &&
+    (value.catalogCheckedAt === null || isValidDateString(value.catalogCheckedAt))
+  )
+}
+
+function isSkillPopularity(value: unknown) {
+  return (
+    isRecord(value) &&
+    isNullablePopularityMetric(value.installs, false) &&
+    isNullablePopularityMetric(value.repositoryStars, true)
+  )
+}
+
+function isNullablePopularityMetric(value: unknown, repository: boolean) {
+  if (value === null) {
+    return true
+  }
+
+  if (!isRecord(value) || !isNonNegativeInteger(value.count) || !isValidDateString(value.checkedAt)) {
+    return false
+  }
+
+  return !repository || isHttpsRepositoryUrl(value.repositoryUrl)
+}
+
+function isHttpsRepositoryUrl(value: unknown) {
+  if (typeof value !== "string") {
+    return false
+  }
+
+  try {
+    const url = new URL(value)
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "github.com" &&
+      url.pathname.split("/").filter(Boolean).length === 2 &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash
+    )
+  } catch {
+    return false
+  }
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== ""
 }
@@ -255,5 +316,9 @@ function isPositiveInteger(value: unknown): value is number {
 }
 
 function isValidDateString(value: unknown): value is string {
-  return typeof value === "string" && !Number.isNaN(Date.parse(value))
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(value) &&
+    !Number.isNaN(Date.parse(value))
+  )
 }
