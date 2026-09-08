@@ -1,12 +1,13 @@
 import type { Metadata } from "next"
 
 import { PageContainer } from "@/components/page-container"
+import { AnalyticsPreference } from "@/components/privacy/analytics-preference"
 import { SiteShell } from "@/components/site-shell"
 import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
   title: "Privacy | Skill Grill",
-  description: "How Skill Grill handles identity data, ratings, comments, reports, and browser storage.",
+  description: "How Skill Grill handles identity data, anonymous product analytics, ratings, comments, reports, and browser storage.",
 }
 
 export default function PrivacyPage() {
@@ -20,14 +21,14 @@ export default function PrivacyPage() {
             <p className="mt-5 text-base leading-7 text-muted-foreground">
               This practical MVP policy explains what Skill Grill stores, what is public, and how to ask us to access or delete your account data.
             </p>
-            <p className="mt-4 text-sm text-muted-foreground">{siteConfig.operator}. Last updated September 2, 2026.</p>
+            <p className="mt-4 text-sm text-muted-foreground">{siteConfig.operator}. Last updated September 8, 2026.</p>
           </header>
 
           <div className="max-w-[70ch] pt-8 text-sm leading-7 text-secondary-foreground sm:pt-10">
             <div className="grid gap-10">
               <PolicySection title="The short version">
                 <p>
-                  Skill Grill is a public directory. You can browse without an account. GitHub sign-in through Supabase is only needed to rate skills, post comments, or report comments. We do not sell personal information, run advertising, or add analytics in this MVP.
+                  Skill Grill is a public directory. You can browse without an account. GitHub sign-in through Supabase is only needed to rate skills, post comments, or report comments. We do not sell personal information or run advertising. Anonymous product analytics is optional and can be disabled below.
                 </p>
               </PolicySection>
 
@@ -41,13 +42,23 @@ export default function PrivacyPage() {
 
               <PolicySection title="Browser storage">
                 <p>
-                  The app stores a Supabase authentication session in the browser when you sign in. It also stores your theme choice and your directory list/card preference. These are functional preferences, not advertising cookies. There is no generic cookie banner because this MVP does not use non-essential tracking. We will reassess that decision if analytics, advertising, or similar tracking is introduced.
+                  The app stores a Supabase authentication session in the browser when you sign in. It also stores your theme choice, your directory list/card preference, and only an analytics opt-out preference when you disable anonymous analytics. These are functional preferences, not advertising cookies. PostHog does not place analytics cookies or persist an analytics identity under this configuration. There is no generic cookie banner because analytics is cookieless and anonymous; this is a product configuration choice, not legal advice.
                 </p>
+              </PolicySection>
+
+              <PolicySection title="Anonymous product analytics">
+                <p>
+                  When enabled, PostHog Cloud EU processes anonymous, cookieless page and product-usage events to improve discovery and understand whether skills are evaluated and installed. Collected data includes sanitized page paths, coarse referral and UTM attribution, device and browser information supplied by the SDK, public skill identifiers, interaction types, result counts, and coarse text-length or token buckets.
+                </p>
+                <p>
+                  Skill Grill does not send PostHog account identity, raw searches, comments, reports, clipboard contents, skill-file contents, URL hashes, or unrestricted query parameters. Person profiles, IP capture, session replay, autocapture, heatmaps, surveys, and exception recording are disabled. Supabase authentication and existing theme and layout storage remain functional and separate from analytics.
+                </p>
+                <AnalyticsPreference />
               </PolicySection>
 
               <PolicySection title="Hosting and processors">
                 <p>
-                  GitHub provides the identity provider for sign-in. Supabase provides authentication and database services. Cloudflare hosts the Worker API and may process operational request data such as timestamps, paths, IP addresses, user agents, and error or performance information through its platform logs. These providers process data to deliver, secure, and maintain the service.
+                  GitHub provides the identity provider for sign-in. Supabase provides authentication and database services. Cloudflare hosts the Worker API and may process operational request data such as timestamps, paths, IP addresses, user agents, and error or performance information through its platform logs. PostHog processes the anonymous analytics described above in its EU Cloud region. These providers process data to deliver, secure, improve, and maintain the service.
                 </p>
               </PolicySection>
 

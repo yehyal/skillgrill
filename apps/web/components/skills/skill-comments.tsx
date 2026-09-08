@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth/auth-provider"
 import { getGitHubIdentity } from "@/lib/auth/identity"
 import { formatSkillDate } from "@/lib/skills"
 import { submitCommentReport } from "@/lib/skill-api"
+import { captureAnalytics, getTextLengthBucket } from "@/lib/analytics"
 import {
   removeCommentFromCache,
   useSkillCommentMutation,
@@ -102,6 +103,11 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
       baseStats: stats,
     }, {
       onSuccess: () => {
+        captureAnalytics("skill_comment_completed", {
+          skill_id: stats.skillId,
+          skill_slug: slug,
+          body_length_bucket: getTextLengthBucket(trimmedBody.length),
+        })
         toast.success("Comment posted")
       },
     })
@@ -123,6 +129,11 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
       baseStats: stats,
     }, {
       onSuccess: () => {
+        captureAnalytics("skill_comment_completed", {
+          skill_id: stats.skillId,
+          skill_slug: slug,
+          body_length_bucket: getTextLengthBucket(comment.body.trim().length),
+        })
         toast.success("Comment posted")
       },
     })
@@ -210,6 +221,7 @@ export function SkillComments({ slug, stats }: { slug: string; stats: SkillStats
             <GitHubSignInPrompt
               className="mt-2"
               description="Sign in with GitHub to say whether it delivered and what others should know."
+              analyticsSurface="comment"
             />
           </div>
         )}
@@ -557,6 +569,7 @@ function ReportCommentDialog({
             <GitHubSignInPrompt
               className="mt-6"
               description="Sign in with GitHub to send a private report to the moderation team."
+              analyticsSurface="report"
             />
           )}
         </div>

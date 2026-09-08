@@ -12,6 +12,10 @@ import {
 import type { SkillDetailResponse, SkillStats } from "@skill-grill/shared"
 
 import { ApiRequestError } from "@/lib/api"
+import {
+  captureAnalytics,
+  getTokenBucket,
+} from "@/lib/analytics"
 import { formatSkillDate, formatTagLabel } from "@/lib/skills"
 import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
@@ -58,6 +62,13 @@ export function SkillDetail({
         setCopied(false)
         copiedResetTimer.current = null
       }, 1600)
+      if (result?.data) {
+        captureAnalytics("install_command_copied", {
+          skill_id: result.data.id,
+          skill_slug: result.data.slug,
+          estimated_tokens_bucket: getTokenBucket(result.data.estimatedTokens),
+        })
+      }
       toast.success("Install command copied")
     } catch {
       setCopied(false)
@@ -123,10 +134,25 @@ function SkillDetailContent({
   onCopy: (command: string) => void
 }) {
   const skill = result.data
+  const viewedSkillId = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (viewedSkillId.current === skill.id) {
+      return
+    }
+
+    viewedSkillId.current = skill.id
+    captureAnalytics("skill_viewed", {
+      skill_id: skill.id,
+      skill_slug: skill.slug,
+      tags: skill.tags,
+      estimated_tokens_bucket: getTokenBucket(skill.estimatedTokens),
+    })
+  }, [skill.id, skill.slug, skill.tags, skill.estimatedTokens])
 
   return (
     <>
-      <Breadcrumb skillName={skill.name} />
+      <Breadcrumb skill={skill} />
 
       <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-14">
         <div className="min-w-0">
@@ -164,7 +190,10 @@ function SkillDetailContent({
         </aside>
 
         <div className="min-w-0 lg:col-start-1">
-          <SkillFiles files={skill.files} />
+          <SkillFiles
+            files={skill.files}
+            analytics={{ skillId: skill.id, skillSlug: skill.slug }}
+          />
           <SkillComments slug={skill.slug} stats={stats} />
         </div>
       </div>
@@ -172,25 +201,34 @@ function SkillDetailContent({
   )
 }
 
-function Breadcrumb({ skillName }: { skillName?: string }) {
+function Breadcrumb({
+  skill,
+}: {
+  skill?: SkillDetailResponse["data"]
+}) {
   return (
     <nav aria-label="Breadcrumb">
       <ol className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
         <li>
           <Link
             href="/skills"
+            onClick={skill ? () => captureAnalytics("skill_outbound_opened", {
+              skill_id: skill.id,
+              skill_slug: skill.slug,
+              destination: "catalog",
+            }) : undefined}
             className="rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             Skill directory
           </Link>
         </li>
-        {skillName ? (
+        {skill ? (
           <>
             <li aria-hidden="true">
               <ChevronRightIcon className="size-3.5" />
             </li>
-            <li className="min-w-0 truncate font-medium text-foreground" aria-current="page" title={skillName}>
-              {skillName}
+            <li className="min-w-0 truncate font-medium text-foreground" aria-current="page" title={skill.name}>
+              {skill.name}
             </li>
           </>
         ) : null}
@@ -299,6 +337,11 @@ function SkillMetadata({
               href={skill.sourceUrl}
               target="_blank"
               rel="noreferrer"
+              onClick={() => captureAnalytics("skill_outbound_opened", {
+                skill_id: skill.id,
+                skill_slug: skill.slug,
+                destination: "source",
+              })}
               className="inline-flex min-w-0 items-center gap-2 break-words text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ArrowTopRightIcon className="size-3.5 shrink-0" aria-hidden="true" />
@@ -310,6 +353,11 @@ function SkillMetadata({
               href={skill.docsUrl}
               target="_blank"
               rel="noreferrer"
+              onClick={() => captureAnalytics("skill_outbound_opened", {
+                skill_id: skill.id,
+                skill_slug: skill.slug,
+                destination: "catalog",
+              })}
               className="inline-flex min-w-0 items-center gap-2 break-words text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <ExternalLinkIcon className="size-3.5 shrink-0" aria-hidden="true" />

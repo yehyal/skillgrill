@@ -50,15 +50,31 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<production publishable key>
 NEXT_PUBLIC_SITE_URL=https://skillgrill.dev
 NEXT_PUBLIC_CONTACT_EMAIL=contact@skillgrill.dev
 NEXT_PUBLIC_INDEXABLE=false
+NEXT_PUBLIC_POSTHOG_ENABLED=true
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=<public EU PostHog project token>
 NODE_VERSION=24.20.0
 PNPM_VERSION=10.33.2
 ```
 
-For preview deployments, set the public API URL to `https://api.skillgrill.dev`, use the Pages preview URL as `NEXT_PUBLIC_SITE_URL` where practical, keep `NEXT_PUBLIC_CONTACT_EMAIL=contact@skillgrill.dev`, and keep `NEXT_PUBLIC_INDEXABLE=false`. Leave both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` unset in the preview environment so contributor and pull request builds cannot initiate production authentication.
+For preview deployments, set the public API URL to `https://api.skillgrill.dev`, use the Pages preview URL as `NEXT_PUBLIC_SITE_URL` where practical, keep `NEXT_PUBLIC_CONTACT_EMAIL=contact@skillgrill.dev`, and keep `NEXT_PUBLIC_INDEXABLE=false`. Set `NEXT_PUBLIC_POSTHOG_ENABLED=false` and leave `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` unset so contributor and pull request builds cannot pollute production analytics. Leave both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` unset in the preview environment so contributor and pull request builds cannot initiate production authentication.
 
 Keep `NEXT_PUBLIC_INDEXABLE=false` for the first production deployment of a new catalog. After checking the generated detail routes, metadata, sitemap, and 404 behavior on the custom domain, set it to `true` and redeploy. The indexable build advertises `/sitemap.xml` from `/robots.txt`; the prelaunch build disallows crawling and omits that sitemap directive.
 
 Never put database credentials, service-role keys, access tokens, or Worker secrets in Pages variables.
+
+## Anonymous product analytics
+
+The frontend uses `posthog-js` only when the production browser hostname is `skillgrill.dev`, `NEXT_PUBLIC_POSTHOG_ENABLED=true`, and a public project token is present. Events go directly to PostHog Cloud EU at `https://eu.i.posthog.com`. The integration is cookieless, uses no person profiles or account identification, disables autocapture and other optional collection features, and allows only the documented product events. URL query strings and hashes are sanitized before capture; only `utm_source`, `utm_medium`, and `utm_campaign` may remain.
+
+Create and configure the PostHog project manually before enabling the production flag:
+
+- Create an EU Cloud project and enable cookieless server-hash mode.
+- Confirm IP capture is disabled.
+- Disable autocapture, session recordings, heatmaps, surveys, and exception collection at the project level as defense in depth.
+- Create the `Skill Grill MVP` dashboard with session-based discovery, evaluation, install, contribution, search-health, catalog, and acquisition views from the event contract in the privacy policy and product documentation.
+- Do not add a reverse proxy initially. Revisit a first-party Cloudflare proxy only if blocker-related undercounting becomes material.
+
+The public project token may be exposed through Pages browser configuration. PostHog administrative or personal API keys must never enter Pages variables, source control, or the frontend bundle.
 
 ## Domains And Authentication
 

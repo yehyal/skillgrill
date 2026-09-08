@@ -10,10 +10,17 @@ import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { captureAnalytics } from "@/lib/analytics"
 
 type FileView = "preview" | "source"
 
-export function SkillFiles({ files }: { files: SkillFile[] }) {
+export function SkillFiles({
+  files,
+  analytics,
+}: {
+  files: SkillFile[]
+  analytics?: { skillId: string; skillSlug: string }
+}) {
   const file = files.find((entry) => entry.path === "SKILL.md")
   const [view, setView] = useState<FileView>("preview")
   const [copied, setCopied] = useState(false)
@@ -44,6 +51,13 @@ export function SkillFiles({ files }: { files: SkillFile[] }) {
         setCopied(false)
         copiedResetTimer.current = null
       }, 1600)
+      if (analytics) {
+        captureAnalytics("skill_file_copied", {
+          skill_id: analytics.skillId,
+          skill_slug: analytics.skillSlug,
+          file_path: "SKILL.md",
+        })
+      }
       toast.success("Source copied")
     } catch {
       setCopied(false)
@@ -51,6 +65,18 @@ export function SkillFiles({ files }: { files: SkillFile[] }) {
         description: "Your browser did not grant clipboard access.",
       })
     }
+  }
+
+  function selectView(nextView: FileView) {
+    if (view === "preview" && nextView === "source" && file && analytics) {
+      captureAnalytics("skill_file_source_viewed", {
+        skill_id: analytics.skillId,
+        skill_slug: analytics.skillSlug,
+        file_path: "SKILL.md",
+      })
+    }
+
+    setView(nextView)
   }
 
   return (
@@ -78,10 +104,10 @@ export function SkillFiles({ files }: { files: SkillFile[] }) {
       {file ? (
         <>
           <div className="mt-5 flex gap-1 border-b border-border" role="group" aria-label="Skill file view">
-            <FileViewTab active={view === "preview"} onClick={() => setView("preview")}>
+            <FileViewTab active={view === "preview"} onClick={() => selectView("preview")}>
               Preview
             </FileViewTab>
-            <FileViewTab active={view === "source"} onClick={() => setView("source")}>
+            <FileViewTab active={view === "source"} onClick={() => selectView("source")}>
               Source
             </FileViewTab>
           </div>

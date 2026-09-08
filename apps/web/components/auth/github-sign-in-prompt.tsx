@@ -5,6 +5,11 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth/auth-provider"
+import {
+  captureAnalytics,
+  rememberAnalyticsSignInSurface,
+  type AnalyticsSignInSurface,
+} from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 
 export function GitHubSignInPrompt({
@@ -12,11 +17,13 @@ export function GitHubSignInPrompt({
   className,
   onSignInStarted,
   onSignedIn,
+  analyticsSurface,
 }: {
   description: ReactNode
   className?: string
   onSignInStarted?: () => void
   onSignedIn?: () => void
+  analyticsSurface?: AnalyticsSignInSurface
 }) {
   const { signInWithGitHub, status } = useAuth()
   const [isSigningIn, setIsSigningIn] = useState(false)
@@ -24,6 +31,12 @@ export function GitHubSignInPrompt({
   async function handleSignIn() {
     setIsSigningIn(true)
     onSignInStarted?.()
+
+    if (analyticsSurface) {
+      rememberAnalyticsSignInSurface(analyticsSurface)
+      captureAnalytics("sign_in_started", { surface: analyticsSurface })
+    }
+
     const result = await signInWithGitHub()
 
     if (!result.error) {
