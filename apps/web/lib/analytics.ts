@@ -168,6 +168,7 @@ const URL_PROPERTIES = new Set([
   "$referrer",
   "$initial_referrer",
 ])
+const POSTHOG_REQUIRED_PROPERTIES = new Set(["token", "distinct_id"])
 
 let analyticsInitialized = false
 
@@ -432,7 +433,7 @@ const sanitizeAnalyticsEvent: BeforeSendFn = (capture) => {
   const properties = Object.fromEntries(
     Object.entries(capture.properties).filter(([key]) =>
       allowedProperties
-        ? allowedProperties.has(key) || key.startsWith("$")
+        ? allowedProperties.has(key) || POSTHOG_REQUIRED_PROPERTIES.has(key) || key.startsWith("$")
         : true
     )
   )
