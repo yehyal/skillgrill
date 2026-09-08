@@ -412,6 +412,8 @@ app.get("/api/skills", async (context) => {
         commentsCount: row.commentsCount,
         score: row.score ?? row.upvotesCount - row.downvotesCount,
         topReason: topReasons.get(row.id) ?? null,
+        freshness: toSkillFreshness(row.catalogUpdatedAt, row.catalogCheckedAt),
+        popularity: toSkillPopularity(row),
         ...(parsedQuery.value.sort === "trending" && row.trendDelta !== null
           ? { trendDelta: row.trendDelta }
           : {}),
@@ -463,6 +465,12 @@ app.get("/api/skills/:slug", async (context) => {
         compatibilityNote: skills.compatibilityNote,
         skillMd: skills.skillMd,
         estimatedTokens: skills.estimatedTokens,
+        installsCount: skills.installsCount,
+        installsCheckedAt: skills.installsCheckedAt,
+        githubStarsCount: skills.githubStarsCount,
+        githubStarsCheckedAt: skills.githubStarsCheckedAt,
+        catalogCheckedAt: skills.catalogCheckedAt,
+        catalogUpdatedAt: skills.catalogUpdatedAt,
         tags: skills.tags,
         createdAt: skills.createdAt,
         updatedAt: skills.updatedAt,
@@ -488,7 +496,16 @@ app.get("/api/skills/:slug", async (context) => {
     }
 
     const reasonStats = await getSkillReasonStats(database.db, skill.id)
-    const { skillMd, ...skillWithoutFile } = skill
+    const {
+      skillMd,
+      installsCount,
+      installsCheckedAt,
+      githubStarsCount,
+      githubStarsCheckedAt,
+      catalogCheckedAt,
+      catalogUpdatedAt,
+      ...skillWithoutFile
+    } = skill
 
     const response: SkillDetailResponse = {
       data: {
@@ -497,6 +514,14 @@ app.get("/api/skills/:slug", async (context) => {
           ? [{ path: "SKILL.md" as const, contents: skillMd }]
           : [],
         score: skill.score ?? skill.upvotesCount - skill.downvotesCount,
+        freshness: toSkillFreshness(catalogUpdatedAt, catalogCheckedAt),
+        popularity: toSkillPopularity({
+          sourceUrl: skill.sourceUrl,
+          installsCount,
+          installsCheckedAt,
+          githubStarsCount,
+          githubStarsCheckedAt,
+        }),
         ...reasonStats,
         createdAt: skill.createdAt.toISOString(),
         updatedAt: skill.updatedAt.toISOString(),
@@ -1431,6 +1456,13 @@ function getSkillListRows(
         downvotesCount: skills.downvotesCount,
         commentsCount: skills.commentsCount,
         score: skills.score,
+        sourceUrl: skills.sourceUrl,
+        installsCount: skills.installsCount,
+        installsCheckedAt: skills.installsCheckedAt,
+        githubStarsCount: skills.githubStarsCount,
+        githubStarsCheckedAt: skills.githubStarsCheckedAt,
+        catalogCheckedAt: skills.catalogCheckedAt,
+        catalogUpdatedAt: skills.catalogUpdatedAt,
         trendDelta: trendTotals.trendDelta,
       })
       .from(skills)
@@ -1466,6 +1498,13 @@ function getSkillListRows(
       downvotesCount: skills.downvotesCount,
       commentsCount: skills.commentsCount,
       score: skills.score,
+      sourceUrl: skills.sourceUrl,
+      installsCount: skills.installsCount,
+      installsCheckedAt: skills.installsCheckedAt,
+      githubStarsCount: skills.githubStarsCount,
+      githubStarsCheckedAt: skills.githubStarsCheckedAt,
+      catalogCheckedAt: skills.catalogCheckedAt,
+      catalogUpdatedAt: skills.catalogUpdatedAt,
       trendDelta: sql<number | null>`null`.as("trend_delta"),
     })
     .from(skills)
@@ -1505,6 +1544,64 @@ function getTrendTotals(database: ReturnType<typeof createDatabase>["db"]) {
     .where(sql`${skillVoteEvents.createdAt} >= now() - interval '7 days'`)
     .groupBy(skillVoteEvents.skillId)
     .as("skill_trend_totals")
+}
+
+function toSkillFreshness(catalogUpdatedAt: Date, catalogCheckedAt: Date | null) {
+  return {
+    catalogUpdatedAt: catalogUpdatedAt.toISOString(),
+    catalogCheckedAt: catalogCheckedAt?.toISOString() ?? null,
+  }
+}
+
+function toSkillPopularity(row: {
+  sourceUrl: string | null
+  installsCount: number | null
+  installsCheckedAt: Date | null
+  githubStarsCount: number | null
+  githubStarsCheckedAt: Date | null
+}) {
+  const repositoryUrl = getPublicGithubRepositoryUrl(row.sourceUrl)
+
+  return {
+    installs:
+      row.installsCount !== null && row.installsCheckedAt
+        ? { count: row.installsCount, checkedAt: row.installsCheckedAt.toISOString() }
+        : null,
+    repositoryStars:
+      repositoryUrl && row.githubStarsCount !== null && row.githubStarsCheckedAt
+        ? {
+            count: row.githubStarsCount,
+            checkedAt: row.githubStarsCheckedAt.toISOString(),
+            repositoryUrl,
+          }
+        : null,
+  }
+}
+
+function getPublicGithubRepositoryUrl(sourceUrl: string | null) {
+  if (!sourceUrl) return null
+
+  try {
+    const url = new URL(sourceUrl)
+    const parts = url.pathname.split("/").filter(Boolean)
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "github.com" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      parts.length !== 2 ||
+      !parts.every((part) => /^[A-Za-z0-9._-]+$/.test(part))
+    ) {
+      return null
+    }
+
+    const repository = parts[1].replace(/\.git$/, "")
+    return repository ? `https://github.com/${parts[0]}/${repository}` : null
+  } catch {
+    return null
+  }
 }
 
 function escapeLikePattern(value: string) {

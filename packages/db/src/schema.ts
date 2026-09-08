@@ -61,6 +61,14 @@ export const skills = pgTable(
     compatibilityNote: text("compatibility_note"),
     skillMd: text("skill_md"),
     estimatedTokens: integer("estimated_tokens"),
+    installsCount: integer("installs_count"),
+    installsCheckedAt: timestamp("installs_checked_at", { withTimezone: true, mode: "date" }),
+    githubStarsCount: integer("github_stars_count"),
+    githubStarsCheckedAt: timestamp("github_stars_checked_at", { withTimezone: true, mode: "date" }),
+    catalogCheckedAt: timestamp("catalog_checked_at", { withTimezone: true, mode: "date" }),
+    catalogUpdatedAt: timestamp("catalog_updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     supportedAgents: text("supported_agents")
       .array()
@@ -118,6 +126,14 @@ export const skills = pgTable(
     compatibilityNoteCheck: check(
       "skills_compatibility_note_check",
       sql`${table.compatibilityNote} is null or (char_length(${table.compatibilityNote}) between 1 and 500)`
+    ),
+    installsCountCheck: check(
+      "skills_installs_count_check",
+      sql`${table.installsCount} is null or ${table.installsCount} >= 0`
+    ),
+    githubStarsCountCheck: check(
+      "skills_github_stars_count_check",
+      sql`${table.githubStarsCount} is null or ${table.githubStarsCount} >= 0`
     ),
   })
 )

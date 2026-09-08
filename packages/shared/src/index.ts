@@ -26,6 +26,25 @@ export type SkillListItem = {
   score: number
   trendDelta?: number
   topReason: VoteReasonCount | null
+  freshness: SkillFreshness
+  popularity: SkillPopularity
+}
+
+export type SkillFreshness = {
+  catalogUpdatedAt: string
+  catalogCheckedAt: string | null
+}
+
+export type SkillPopularity = {
+  installs: {
+    count: number
+    checkedAt: string
+  } | null
+  repositoryStars: {
+    count: number
+    checkedAt: string
+    repositoryUrl: string
+  } | null
 }
 
 export type SkillDetail = {
@@ -39,6 +58,8 @@ export type SkillDetail = {
   compatibilityNote: string | null
   estimatedTokens: number | null
   files: SkillFile[]
+  freshness: SkillFreshness
+  popularity: SkillPopularity
   tags: string[]
   createdAt: string
   updatedAt: string
