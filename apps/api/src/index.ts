@@ -74,10 +74,24 @@ const MAX_COMMENT_LIMIT = 50
 const CACHE_CONTROL = {
   noStore: "no-store",
   private: "private, no-store",
-  skillList: "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
-  skillDetail: "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
-  stats: "public, max-age=10, s-maxage=60, stale-while-revalidate=60",
-  comments: "public, max-age=30, s-maxage=60, stale-while-revalidate=60",
+} as const
+const PUBLIC_CACHE_CONTROL = {
+  skillList: {
+    browser: "public, max-age=60",
+    edge: "public, max-age=300, stale-while-revalidate=600",
+  },
+  skillDetail: {
+    browser: "public, max-age=300",
+    edge: "public, max-age=1800, stale-while-revalidate=3600",
+  },
+  stats: {
+    browser: "public, max-age=10",
+    edge: "public, max-age=60, stale-while-revalidate=60",
+  },
+  comments: {
+    browser: "public, max-age=30",
+    edge: "public, max-age=60, stale-while-revalidate=60",
+  },
 } as const
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
@@ -187,6 +201,7 @@ app.use("*", async (context, next) => {
   } finally {
     if (hasAuthorizationHeader) {
       context.header("Cache-Control", CACHE_CONTROL.private)
+      context.res.headers.delete("Cloudflare-CDN-Cache-Control")
     } else if (!context.res.headers.has("Cache-Control")) {
       context.header("Cache-Control", CACHE_CONTROL.noStore)
     }
@@ -409,7 +424,7 @@ app.get("/api/skills", async (context) => {
       },
     }
 
-    context.header("Cache-Control", CACHE_CONTROL.skillList)
+    setPublicCacheControl(context, PUBLIC_CACHE_CONTROL.skillList)
     return context.json(response)
   } catch {
     return jsonError(
@@ -488,7 +503,7 @@ app.get("/api/skills/:slug", async (context) => {
       },
     }
 
-    context.header("Cache-Control", CACHE_CONTROL.skillDetail)
+    setPublicCacheControl(context, PUBLIC_CACHE_CONTROL.skillDetail)
     return context.json(response)
   } catch {
     return jsonError(
@@ -548,7 +563,7 @@ app.get("/api/skills/:slug/stats", async (context) => {
       },
     }
 
-    context.header("Cache-Control", CACHE_CONTROL.stats)
+    setPublicCacheControl(context, PUBLIC_CACHE_CONTROL.stats)
     return context.json(response)
   } catch {
     return jsonError(
@@ -650,7 +665,7 @@ app.get("/api/skills/:slug/comments", async (context) => {
           : null,
     }
 
-    context.header("Cache-Control", CACHE_CONTROL.comments)
+    setPublicCacheControl(context, PUBLIC_CACHE_CONTROL.comments)
     return context.json(response)
   } catch {
     return jsonError(
@@ -1494,6 +1509,14 @@ function getTrendTotals(database: ReturnType<typeof createDatabase>["db"]) {
 
 function escapeLikePattern(value: string) {
   return value.replace(/[\\%_]/g, "\\$&")
+}
+
+function setPublicCacheControl(
+  context: Context<AppEnv>,
+  policy: { browser: string; edge: string }
+) {
+  context.header("Cache-Control", policy.browser)
+  context.header("Cloudflare-CDN-Cache-Control", policy.edge)
 }
 
 function jsonError(

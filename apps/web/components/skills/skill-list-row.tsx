@@ -4,16 +4,40 @@ import type { SkillListItem } from "@skill-grill/shared"
 
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
+import {
+  captureAnalytics,
+  type AnalyticsRanking,
+  type AnalyticsViewMode,
+} from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 
 type SkillListRowProps = {
   skill: SkillListItem
   rank: number
   compact?: boolean
+  analytics?: {
+    surface: "homepage" | "directory"
+    ranking: AnalyticsRanking
+    viewMode: AnalyticsViewMode
+  }
 }
 
-export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps) {
+export function SkillListRow({ skill, rank, compact = false, analytics }: SkillListRowProps) {
   const Heading = compact ? "h3" : "h2"
+  const handleSkillSelected = () => {
+    if (!analytics) {
+      return
+    }
+
+    captureAnalytics("skill_selected", {
+      skill_id: skill.id,
+      skill_slug: skill.slug,
+      surface: analytics.surface,
+      rank,
+      ranking: analytics.ranking,
+      view_mode: analytics.viewMode,
+    })
+  }
 
   return (
     <article className={cn(
@@ -28,6 +52,7 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
         <div className="flex min-w-0 items-start gap-3">
           <Link
             href={`/skills/${encodeURIComponent(skill.slug)}`}
+            onClick={handleSkillSelected}
             className="min-w-0 rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <Heading className="break-words text-base font-semibold leading-6 transition-colors hover:text-primary sm:text-[1.05rem]">
@@ -62,6 +87,7 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
         {!compact ? (
           <Link
             href={`/skills/${encodeURIComponent(skill.slug)}`}
+            onClick={handleSkillSelected}
             className="inline-flex items-center gap-1 rounded-sm text-xs font-medium text-primary outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             View skill <ArrowRightIcon className="size-3.5" aria-hidden="true" />

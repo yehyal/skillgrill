@@ -63,7 +63,17 @@ export function HomeDiscovery() {
               leaderboardQuery.data.data.length > 0 ? (
                 <div className="border-t border-border">
                   {leaderboardQuery.data.data.map((skill, index) => (
-                    <SkillListRow key={skill.id} skill={skill} rank={index + 1} compact />
+                    <SkillListRow
+                      key={skill.id}
+                      skill={skill}
+                      rank={index + 1}
+                      compact
+                      analytics={{
+                        surface: "homepage",
+                        ranking: ranking === "trending" ? "trending" : "all_time",
+                        viewMode: "list",
+                      }}
+                    />
                   ))}
                 </div>
               ) : ranking === "trending" ? (
@@ -98,7 +108,13 @@ export function HomeDiscovery() {
               recentQuery.data.data.length > 0 ? (
                 <div className="border-t border-border">
                   {recentQuery.data.data.map((skill, index) => (
-                    <SkillListRow key={skill.id} skill={skill} rank={index + 1} compact />
+                    <SkillListRow
+                      key={skill.id}
+                      skill={skill}
+                      rank={index + 1}
+                      compact
+                      analytics={{ surface: "homepage", ranking: "newest", viewMode: "list" }}
+                    />
                   ))}
                 </div>
               ) : (

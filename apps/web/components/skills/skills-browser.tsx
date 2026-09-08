@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
@@ -29,6 +29,11 @@ import {
   formatTagLabel,
   skillTagOptions,
 } from "@/lib/skills"
+import {
+  captureAnalytics,
+  getTextLengthBucket,
+  type AnalyticsRanking,
+} from "@/lib/analytics"
 import { useSkillListQuery } from "@/lib/skill-queries"
 
 const DIRECTORY_VIEW_KEY = "skill-grill:directory-view"
@@ -42,6 +47,11 @@ export function SkillsBrowser() {
   const searchParams = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "")
   const [searchIsDirty, setSearchIsDirty] = useState(false)
+  const pendingSearchRef = useRef<{
+    query: string
+    tag: string
+    ranking: AnalyticsRanking
+  } | null>(null)
   const view = useSyncExternalStore(subscribeToDirectoryView, getDirectoryView, getServerDirectoryView)
   const urlKey = searchParams.toString()
   const query = useMemo<SkillListQuery>(() => {
@@ -60,6 +70,39 @@ export function SkillsBrowser() {
   const listQuery = useSkillListQuery(query)
   const result = listQuery.data
   const error = listQuery.error instanceof Error ? listQuery.error.message : null
+  const currentSort = query.sort
+  const currentTag = query.tags[0] ?? "all"
+  const currentPage = query.page
+  const hasFilters = Boolean(
+    query.q ||
+      query.tags.length > 0 ||
+      currentSort === "trending"
+  )
+
+  useEffect(() => {
+    const pendingSearch = pendingSearchRef.current
+
+    if (!pendingSearch || !result || !listQuery.isSuccess) {
+      return
+    }
+
+    if (
+      pendingSearch.query !== (query.q ?? "") ||
+      pendingSearch.tag !== currentTag ||
+      pendingSearch.ranking !== getAnalyticsRanking(currentSort)
+    ) {
+      return
+    }
+
+    captureAnalytics("directory_searched", {
+      query_length_bucket: getTextLengthBucket(pendingSearch.query.length),
+      result_count: result.pagination.total,
+      zero_results: result.pagination.total === 0,
+      tag: pendingSearch.tag,
+      ranking: pendingSearch.ranking,
+    })
+    pendingSearchRef.current = null
+  }, [currentSort, currentTag, listQuery.isSuccess, query.q, result])
 
   function updateUrl(updates: Record<string, string | null>) {
     const nextParams = new URLSearchParams(searchParams.toString())
@@ -96,25 +139,28 @@ export function SkillsBrowser() {
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nextSearch = searchIsDirty ? search : searchParams.get("q") ?? ""
-    updateUrl({ q: nextSearch.trim() || null, page: null })
+    const nextSearch = (searchIsDirty ? search : searchParams.get("q") ?? "").trim()
+    pendingSearchRef.current = {
+      query: nextSearch,
+      tag: currentTag,
+      ranking: getAnalyticsRanking(currentSort),
+    }
+    updateUrl({ q: nextSearch || null, page: null })
     setSearchIsDirty(false)
   }
 
   function clearFilters() {
+    pendingSearchRef.current = null
+    if (currentTag !== "all") {
+      captureAnalytics("directory_filter_changed", { filter_type: "tag", value: "all" })
+    }
+    if (currentSort === "trending") {
+      captureAnalytics("directory_filter_changed", { filter_type: "ranking", value: "all_time" })
+    }
     setSearch("")
     setSearchIsDirty(false)
     router.replace(pathname, { scroll: false })
   }
-
-  const currentSort = query.sort
-  const currentTag = query.tags[0] ?? "all"
-  const currentPage = query.page
-  const hasFilters = Boolean(
-    query.q ||
-      query.tags.length > 0 ||
-      currentSort === "trending"
-  )
 
   return (
     <main id="main-content" tabIndex={-1} className="flex-1">
@@ -138,6 +184,12 @@ export function SkillsBrowser() {
             <nav aria-label="Skill ranking" className="flex gap-5">
               <Link
                 href={rankingHref("popular")}
+                onClick={() => {
+                  pendingSearchRef.current = null
+                  if (currentSort !== "popular") {
+                    captureAnalytics("directory_filter_changed", { filter_type: "ranking", value: "all_time" })
+                  }
+                }}
                 aria-current={currentSort === "popular" ? "page" : undefined}
                 className={`border-b-2 px-0.5 pb-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${currentSort === "popular" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
               >
@@ -145,6 +197,12 @@ export function SkillsBrowser() {
               </Link>
               <Link
                 href={rankingHref("trending")}
+                onClick={() => {
+                  pendingSearchRef.current = null
+                  if (currentSort !== "trending") {
+                    captureAnalytics("directory_filter_changed", { filter_type: "ranking", value: "trending" })
+                  }
+                }}
                 aria-current={currentSort === "trending" ? "page" : undefined}
                 className={`border-b-2 px-0.5 pb-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${currentSort === "trending" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
               >
@@ -209,7 +267,16 @@ export function SkillsBrowser() {
           <div className="flex items-end">
             <label className="grid w-full min-w-0 gap-2 text-xs font-medium text-foreground lg:ml-auto lg:max-w-[22rem]">
               <span>Tag</span>
-              <Select value={currentTag} onValueChange={(value) => updateUrl({ tags: value === "all" ? null : value, page: null })}>
+              <Select
+                value={currentTag}
+                onValueChange={(value) => {
+                  pendingSearchRef.current = null
+                  if (value !== currentTag) {
+                    captureAnalytics("directory_filter_changed", { filter_type: "tag", value })
+                  }
+                  updateUrl({ tags: value === "all" ? null : value, page: null })
+                }}
+              >
                 <SelectTrigger aria-label="Filter by tag">
                   <SelectValue />
                 </SelectTrigger>
@@ -265,6 +332,11 @@ export function SkillsBrowser() {
                       key={skill.id}
                       skill={skill}
                       rank={(currentPage - 1) * result.pagination.limit + index + 1}
+                      analytics={{
+                        surface: "directory",
+                        ranking: getAnalyticsRanking(currentSort),
+                        viewMode: "list",
+                      }}
                     />
                   ))}
                 </div>
@@ -275,6 +347,10 @@ export function SkillsBrowser() {
                       key={skill.id}
                       skill={skill}
                       index={(currentPage - 1) * result.pagination.limit + index}
+                      analytics={{
+                        surface: "directory",
+                        ranking: getAnalyticsRanking(currentSort),
+                      }}
                     />
                   ))}
                 </div>
@@ -353,4 +429,16 @@ function setDirectoryView(nextView: DirectoryView) {
     // The UI remains usable when browser storage is unavailable.
   }
   window.dispatchEvent(new Event(DIRECTORY_VIEW_EVENT))
+}
+
+function getAnalyticsRanking(sort: SkillSort): AnalyticsRanking {
+  if (sort === "trending") {
+    return "trending"
+  }
+
+  if (sort === "newest") {
+    return "newest"
+  }
+
+  return "all_time"
 }

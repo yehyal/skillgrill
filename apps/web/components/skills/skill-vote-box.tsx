@@ -21,6 +21,10 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { useSkillMeQuery, useSkillVoteMutation } from "@/lib/skill-queries"
 import {
+  captureAnalytics,
+  getVoteOperation,
+} from "@/lib/analytics"
+import {
   clearPendingVoteIntent,
   readPendingVoteIntent,
   savePendingVoteIntent,
@@ -170,7 +174,25 @@ export function SkillVoteBox({
         baseStats: stats,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          captureAnalytics("skill_vote_completed", {
+            skill_id: stats.skillId,
+            skill_slug: slug,
+            operation: getVoteOperation(
+              myVote,
+              myReason,
+              response.data.myVote,
+              response.data.myReason
+            ),
+            verdict:
+              response.data.myVote === 1
+                ? "well_done"
+                : response.data.myVote === -1
+                  ? "undercooked"
+                  : null,
+            has_reason: response.data.myReason !== null,
+            ...(response.data.myReason ? { reason: response.data.myReason } : {}),
+          })
           onSuccess?.()
 
           if (!reasonOnly) {
@@ -400,6 +422,7 @@ export function SkillVoteBox({
           <GitHubSignInPrompt
             className="mt-6"
             description={<span id="sign-in-description">Sign in with GitHub to add one rating per skill.</span>}
+            analyticsSurface="vote"
             onSignInStarted={() => {
               oauthStartedRef.current = true
             }}

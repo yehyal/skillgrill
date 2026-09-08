@@ -6,8 +6,38 @@ import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
 import { Badge } from "@/components/ui/badge"
 import { formatTagLabel } from "@/lib/skills"
+import {
+  captureAnalytics,
+  type AnalyticsRanking,
+} from "@/lib/analytics"
 
-export function SkillCard({ skill, index }: { skill: SkillListItem; index: number }) {
+export function SkillCard({
+  skill,
+  index,
+  analytics,
+}: {
+  skill: SkillListItem
+  index: number
+  analytics?: {
+    surface: "homepage" | "directory"
+    ranking: AnalyticsRanking
+  }
+}) {
+  function handleSkillSelected() {
+    if (!analytics) {
+      return
+    }
+
+    captureAnalytics("skill_selected", {
+      skill_id: skill.id,
+      skill_slug: skill.slug,
+      surface: analytics.surface,
+      rank: index + 1,
+      ranking: analytics.ranking,
+      view_mode: "card",
+    })
+  }
+
   return (
     <article className="group flex min-h-[18rem] min-w-0 flex-col rounded-md border border-border bg-card p-4 transition-colors hover:border-primary/40 sm:p-5">
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -21,6 +51,7 @@ export function SkillCard({ skill, index }: { skill: SkillListItem; index: numbe
 
       <Link
         href={`/skills/${encodeURIComponent(skill.slug)}`}
+        onClick={handleSkillSelected}
         className="mt-4 flex min-w-0 items-start justify-between gap-4 rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
         <h2 className="min-w-0 break-words text-xl font-semibold leading-6 transition-colors group-hover:text-primary">

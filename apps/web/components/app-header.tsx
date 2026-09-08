@@ -22,6 +22,7 @@ import { siteConfig } from "@/lib/site-config"
 import { cn } from "@/lib/utils"
 import { PageContainer } from "@/components/page-container"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { captureAnalytics, rememberAnalyticsSignInSurface } from "@/lib/analytics"
 import { toast } from "sonner"
 
 function AuthSkeleton() {
@@ -56,6 +57,8 @@ export function AppHeader() {
   async function handleSignIn() {
     setActionError(null)
     setIsSigningIn(true)
+    rememberAnalyticsSignInSurface("header")
+    captureAnalytics("sign_in_started", { surface: "header" })
     const result = await signInWithGitHub()
 
     if (result.error) {

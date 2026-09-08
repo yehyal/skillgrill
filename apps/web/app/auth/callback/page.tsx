@@ -9,6 +9,10 @@ import { SiteShell } from "@/components/site-shell"
 import { useAuth } from "@/lib/auth/auth-provider"
 import { sanitizeRedirectPath } from "@/lib/auth/redirect"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import {
+  captureSignInCompletedOnce,
+  readAnalyticsSignInSurface,
+} from "@/lib/analytics"
 
 type CallbackState = "checking" | "error"
 
@@ -69,6 +73,7 @@ function CallbackView() {
 
       finished = true
       window.clearTimeout(missingSessionTimer)
+      captureSignInCompletedOnce(readAnalyticsSignInSurface())
       router.replace(next)
     }
 
