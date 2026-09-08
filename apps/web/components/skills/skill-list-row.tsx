@@ -5,6 +5,10 @@ import type { SkillListItem } from "@skill-grill/shared"
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
 import {
+  SkillCatalogStaleWarning,
+  SkillPopularity,
+} from "@/components/skills/skill-popularity"
+import {
   captureAnalytics,
   type AnalyticsRanking,
   type AnalyticsViewMode,
@@ -75,6 +79,10 @@ export function SkillListRow({ skill, rank, compact = false, analytics }: SkillL
         <p className={compact ? "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground" : "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground"}>
           {skill.description}
         </p>
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <SkillPopularity popularity={skill.popularity} />
+          <SkillCatalogStaleWarning checkedAt={skill.freshness.catalogCheckedAt} />
+        </div>
         {!compact ? <SkillTopReasonLabel reason={skill.topReason} className="mt-2" /> : null}
       </div>
 

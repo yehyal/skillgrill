@@ -6,7 +6,7 @@ Skill Grill is a warm, compact directory for comparing AI agent skills. The inte
 
 - Prioritize dense discovery, scannable metadata, and quick comparison over marketing drama.
 - Keep color restrained: tinted neutral surfaces carry the product; terracotta marks primary actions, selected states, links, and small emphasis.
-- Use skills.sh as an information hierarchy reference only. Do not copy its brand, ASCII treatment, assets, exact layout, install metrics, audits, or repository statistics.
+- Use skills.sh as an information hierarchy reference only. Do not copy its brand, ASCII treatment, assets, exact layout, audits, or repository statistics. Skill Grill may show restrained upstream installs and repository-star counts as neutral context, never as verdicts or proof of quality.
 - Proof is explicit: positive votes, negative votes, comments, and seven-day movement where available.
 - Do not render a user-facing aggregate score. The database and API may retain score for compatibility and internal calculations.
 
@@ -166,7 +166,9 @@ Measured text pairs meet 4.5:1 in both themes, including muted text on muted sur
 
 - Leaderboard rows are the default discovery presentation. They emphasize rank, name, source identifier, short description, Well done, Undercooked, comments, and optional trend delta.
 - Discovery cards are optional. They provide more description room plus tags, while still showing explicit verdict counts.
-- Metadata rails show source path or identifier, Requirements, tags, source/documentation links, and added/updated dates.
+- Metadata rails show source path or identifier, Requirements, tags, source/documentation links, upstream reach, and catalog status. Do not present Skill Grill's `createdAt` as the skill's original creation date or use generic Added/Updated labels.
+- Discovery rows and cards may show compact upstream installs and `repo stars` beneath the description. Render available metrics only, keep them visually neutral, and show `Needs recheck` only when the catalog check is more than 30 days old. Do not add fresh/aging/unknown badges to discovery items.
+- Detail metadata uses an `Upstream reach` group and a `Catalog status` group. Catalog status is `Checked recently` through 8 days, `Checked N days ago` from 9 through 30 days, `Needs recheck` after 30 days, and `Not yet checked` when no check exists. Show the exact last-checked date and `Catalog updated` from the catalog freshness contract. Future timestamps clamp to zero age.
 - Requirements display only the trimmed optional `compatibility` value from the root `SKILL.md` frontmatter. Keep the author’s wording, accept at most 500 characters, and show `No requirements provided by the author.` when absent.
 - Never infer Requirements from prose, repositories, dependencies, or agent mentions. Do not show a “Tested with” label until the product collects evidence-based community reports.
 - Install blocks sit near the top of detail pages. Commands use Geist Mono, horizontal overflow, and persistent copy feedback.
