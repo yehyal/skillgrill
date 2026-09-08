@@ -182,9 +182,9 @@ function parseSkillDetailResponse(payload: unknown, requestedSlug: string) {
     !isNonEmptyString(skill.name) ||
     !isNonEmptyString(skill.description) ||
     nullableLinks.some((value) => value !== null && typeof value !== "string") ||
+    !isNullableCompatibilityNote(skill.compatibilityNote) ||
     (skill.estimatedTokens !== null && !isPositiveInteger(skill.estimatedTokens)) ||
     !isStringArray(skill.tags) ||
-    !isStringArray(skill.supportedAgents) ||
     !isValidDateString(skill.createdAt) ||
     !isValidDateString(skill.updatedAt) ||
     !Array.isArray(skill.files) ||
@@ -240,6 +240,10 @@ function isNonEmptyString(value: unknown): value is string {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string")
+}
+
+function isNullableCompatibilityNote(value: unknown): value is string | null {
+  return value === null || (isNonEmptyString(value) && [...value].length <= 500)
 }
 
 function isNonNegativeInteger(value: unknown): value is number {

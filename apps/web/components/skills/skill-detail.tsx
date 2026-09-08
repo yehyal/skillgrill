@@ -12,7 +12,7 @@ import {
 import type { SkillDetailResponse, SkillStats } from "@skill-grill/shared"
 
 import { ApiRequestError } from "@/lib/api"
-import { formatAgentLabel, formatSkillDate, formatTagLabel } from "@/lib/skills"
+import { formatSkillDate, formatTagLabel } from "@/lib/skills"
 import { useSkillDetailQuery, useSkillStatsQuery } from "@/lib/skill-queries"
 import { PageContainer } from "@/components/page-container"
 import { SkillComments } from "@/components/skills/skill-comments"
@@ -264,9 +264,9 @@ function SkillMetadata({
           <dd className="mt-1 break-all font-mono text-xs text-foreground">{skill.id}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Compatibility</dt>
+          <dt className="text-xs text-muted-foreground">Requirements</dt>
           <dd className="mt-1 break-words text-foreground">
-            {skill.supportedAgents.map(formatAgentLabel).join(" · ") || "Not listed"}
+            {skill.compatibilityNote ?? "No requirements provided by the author."}
           </dd>
         </div>
         <div>

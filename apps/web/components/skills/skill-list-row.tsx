@@ -5,7 +5,6 @@ import type { SkillListItem } from "@skill-grill/shared"
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
 import { cn } from "@/lib/utils"
-import { formatAgentLabel } from "@/lib/skills"
 
 type SkillListRowProps = {
   skill: SkillListItem
@@ -50,9 +49,6 @@ export function SkillListRow({ skill, rank, compact = false }: SkillListRowProps
         </p>
         <p className={compact ? "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground" : "mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground"}>
           {skill.description}
-        </p>
-        <p className="mt-2 truncate text-xs text-muted-foreground" title={skill.supportedAgents.map(formatAgentLabel).join(", ")}>
-          {skill.supportedAgents.map(formatAgentLabel).join(" · ") || "Agent compatibility not listed"}
         </p>
         {!compact ? <SkillTopReasonLabel reason={skill.topReason} className="mt-2" /> : null}
       </div>

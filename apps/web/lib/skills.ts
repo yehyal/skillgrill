@@ -21,28 +21,6 @@ export const skillTagOptions = [
   "prompting",
 ] as const
 
-export const skillAgentOptions = ["codex", "claude-code", "cursor", "generic"] as const
-
-export function formatAgentLabel(agent: string) {
-  if (agent === "claude-code") {
-    return "Claude Code"
-  }
-
-  if (agent === "codex") {
-    return "Codex"
-  }
-
-  if (agent === "cursor") {
-    return "Cursor"
-  }
-
-  if (agent === "generic") {
-    return "Any agent"
-  }
-
-  return agent
-}
-
 export function formatTagLabel(tag: string) {
   return tag.replace(/-/g, " ")
 }

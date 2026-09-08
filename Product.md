@@ -128,7 +128,7 @@ Upstream/local skill metadata:
 - Source URL
 - Install command
 - Tags
-- Agent compatibility labels
+- Source-authored Requirements note, when provided
 
 Community data:
 
@@ -314,14 +314,13 @@ Features:
   - Popular
   - Highest score
   - Newest
-- Filter by tag/agent later
+- Filter by tag
 
 Skill card fields:
 
 - Skill name
 - Short description
 - Tags
-- Score
 - Upvote/downvote counts
 - Comments count
 - Source/install link if available
@@ -341,9 +340,10 @@ Features:
 - Skill name
 - Description
 - Tags
+- Source-authored Requirements note, when provided
 - Source link
 - Install command
-- Community score
+- Community verdict counts
 - Upvote/downvote controls
 - Comments
 - Add comment form for logged-in users
@@ -355,8 +355,9 @@ Sections:
 1. Header
 2. Skill metadata
 3. Install/source block
-4. Community voting block
-5. Comments block
+4. Files section for the root `SKILL.md`, when available
+5. Community voting block
+6. Comments block
 
 ---
 
@@ -475,6 +476,10 @@ create table skills (
   docs_url text,
 
   tags text[] not null default '{}',
+  compatibility_note text,
+
+  -- Legacy rollout column. Remove it in a later cleanup migration after no
+  -- deployed code or importer references it.
   supported_agents text[] not null default '{}',
 
   upvotes_count integer not null default 0,
@@ -499,7 +504,14 @@ create table skills (
 Notes:
 
 - `tags` can include values like `pdf`, `frontend`, `testing`, `research`, `docs`.
-- `supported_agents` can include values like `codex`, `claude-code`, `cursor`, `generic`.
+- `compatibility_note` comes only from the optional `compatibility` field in the
+  root `SKILL.md` frontmatter. Trim surrounding whitespace, accept 1–500
+  characters, and store `null` when the author does not provide it.
+- Requirements are source-authored notes, not inferred compatibility claims.
+  The product does not display “Tested with” until it has evidence-based
+  community reports.
+- `supported_agents` remains temporarily for the expand-and-contract rollout;
+  it is not exposed in discovery or detail responses and will be removed later.
 
 ---
 
@@ -1005,7 +1017,6 @@ type SkillListItem = {
   name: string;
   description: string;
   tags: string[];
-  supportedAgents: string[];
   upvotesCount: number;
   downvotesCount: number;
   commentsCount: number;
@@ -1026,7 +1037,7 @@ type SkillDetail = {
   installCommand: string | null;
   docsUrl: string | null;
   tags: string[];
-  supportedAgents: string[];
+  compatibilityNote: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -1196,7 +1207,7 @@ type SeedSkill = {
   installCommand?: string;
   docsUrl?: string;
   tags: string[];
-  supportedAgents: string[];
+  compatibilityNote: string | null;
 };
 ```
 
@@ -1235,7 +1246,7 @@ Example placeholder:
   sourceUrl: "https://example.com/pdf-toolkit",
   installCommand: "skills install pdf-toolkit",
   tags: ["pdf", "documents"],
-  supportedAgents: ["codex", "generic"]
+  compatibilityNote: null
 }
 ```
 
@@ -1428,7 +1439,7 @@ After MVP validation, consider:
 - User profiles
 - Reputation
 - Collections
-- “Works with agent X” reports
+- Evidence-based “Tested with” reports
 - Maintainer replies
 - Claimed maintainer profiles
 
@@ -1452,7 +1463,7 @@ After MVP validation, consider:
 
 ### Trust features
 
-- Compatibility matrix
+- Evidence-based “Tested with” reports
 - Manual reviews
 - Verified testing
 - Benchmark reports

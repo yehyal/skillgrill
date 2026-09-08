@@ -11,12 +11,12 @@ type SeedSkillCatalogEntry = {
   installCommand: string
   docsUrl: string
   tags: string[]
-  supportedAgents: string[]
 }
 
 type SeedSkill = SeedSkillCatalogEntry & {
   skillMd: string
   estimatedTokens: number
+  compatibilityNote: string | null
 }
 
 const seedSkillCatalog: SeedSkillCatalogEntry[] = [
@@ -28,7 +28,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/pdf-compass",
     docsUrl: "https://local.skill-grill.invalid/pdf-compass/docs",
     tags: ["pdf", "documents"],
-    supportedAgents: ["codex", "generic"],
   },
   {
     slug: "doc-threader",
@@ -38,7 +37,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/doc-threader",
     docsUrl: "https://local.skill-grill.invalid/doc-threader/docs",
     tags: ["documents", "writing"],
-    supportedAgents: ["claude-code", "generic"],
   },
   {
     slug: "sheet-signal",
@@ -48,7 +46,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/sheet-signal",
     docsUrl: "https://local.skill-grill.invalid/sheet-signal/docs",
     tags: ["spreadsheets", "data-analysis"],
-    supportedAgents: ["codex", "cursor"],
   },
   {
     slug: "deck-loom",
@@ -58,7 +55,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/deck-loom",
     docsUrl: "https://local.skill-grill.invalid/deck-loom/docs",
     tags: ["slides", "writing"],
-    supportedAgents: ["codex", "generic"],
   },
   {
     slug: "review-lens",
@@ -68,7 +64,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/review-lens",
     docsUrl: "https://local.skill-grill.invalid/review-lens/docs",
     tags: ["code-review", "testing"],
-    supportedAgents: ["codex", "claude-code", "cursor"],
   },
   {
     slug: "layout-forge",
@@ -78,7 +73,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/layout-forge",
     docsUrl: "https://local.skill-grill.invalid/layout-forge/docs",
     tags: ["frontend", "design"],
-    supportedAgents: ["claude-code", "cursor"],
   },
   {
     slug: "route-radar",
@@ -88,7 +82,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/route-radar",
     docsUrl: "https://local.skill-grill.invalid/route-radar/docs",
     tags: ["nextjs", "frontend"],
-    supportedAgents: ["codex", "cursor"],
   },
   {
     slug: "test-weaver",
@@ -98,7 +91,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/test-weaver",
     docsUrl: "https://local.skill-grill.invalid/test-weaver/docs",
     tags: ["testing", "code-review"],
-    supportedAgents: ["codex", "generic"],
   },
   {
     slug: "signal-scout",
@@ -108,7 +100,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/signal-scout",
     docsUrl: "https://local.skill-grill.invalid/signal-scout/docs",
     tags: ["research", "data-analysis"],
-    supportedAgents: ["claude-code", "generic"],
   },
   {
     slug: "repo-needle",
@@ -118,7 +109,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/repo-needle",
     docsUrl: "https://local.skill-grill.invalid/repo-needle/docs",
     tags: ["github", "devops"],
-    supportedAgents: ["codex", "claude-code"],
   },
   {
     slug: "preview-pilot",
@@ -128,7 +118,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/preview-pilot",
     docsUrl: "https://local.skill-grill.invalid/preview-pilot/docs",
     tags: ["vercel", "devops"],
-    supportedAgents: ["cursor", "generic"],
   },
   {
     slug: "row-keeper",
@@ -138,7 +127,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/row-keeper",
     docsUrl: "https://local.skill-grill.invalid/row-keeper/docs",
     tags: ["supabase", "data-analysis"],
-    supportedAgents: ["codex", "generic"],
   },
   {
     slug: "canvas-cue",
@@ -148,7 +136,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/canvas-cue",
     docsUrl: "https://local.skill-grill.invalid/canvas-cue/docs",
     tags: ["design", "figma"],
-    supportedAgents: ["claude-code", "cursor"],
   },
   {
     slug: "flow-switch",
@@ -158,7 +145,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/flow-switch",
     docsUrl: "https://local.skill-grill.invalid/flow-switch/docs",
     tags: ["automation", "devops"],
-    supportedAgents: ["codex", "generic"],
   },
   {
     slug: "plainspoken",
@@ -168,7 +154,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/plainspoken",
     docsUrl: "https://local.skill-grill.invalid/plainspoken/docs",
     tags: ["writing", "prompting"],
-    supportedAgents: ["claude-code", "generic"],
   },
   {
     slug: "threat-sketch",
@@ -178,7 +163,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/threat-sketch",
     docsUrl: "https://local.skill-grill.invalid/threat-sketch/docs",
     tags: ["security", "code-review"],
-    supportedAgents: ["codex", "claude-code"],
   },
   {
     slug: "stacksmith",
@@ -188,7 +172,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/stacksmith",
     docsUrl: "https://local.skill-grill.invalid/stacksmith/docs",
     tags: ["prompting", "frontend"],
-    supportedAgents: ["codex", "generic"],
   },
   {
     slug: "query-garden",
@@ -198,7 +181,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/query-garden",
     docsUrl: "https://local.skill-grill.invalid/query-garden/docs",
     tags: ["supabase", "testing"],
-    supportedAgents: ["codex", "cursor"],
   },
   {
     slug: "brief-bloom",
@@ -208,7 +190,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/brief-bloom",
     docsUrl: "https://local.skill-grill.invalid/brief-bloom/docs",
     tags: ["writing", "research"],
-    supportedAgents: ["claude-code", "generic"],
   },
   {
     slug: "signal-check",
@@ -218,7 +199,6 @@ const seedSkillCatalog: SeedSkillCatalogEntry[] = [
     installCommand: "skills install local/signal-check",
     docsUrl: "https://local.skill-grill.invalid/signal-check/docs",
     tags: ["devops", "testing"],
-    supportedAgents: ["codex", "generic"],
   },
 ]
 
@@ -244,6 +224,46 @@ function calculateEstimatedTokens(contents: string) {
   return Math.ceil([...contents].length / 4)
 }
 
+function readCompatibilityNote(contents: string) {
+  const frontmatter = contents.match(/^---\s*\n([\s\S]*?)\n---\s*(?:\n|$)/)?.[1]
+  const compatibilityLine = frontmatter
+    ?.split("\n")
+    .find((line) => /^compatibility\s*:/i.test(line))
+
+  if (!compatibilityLine) {
+    return null
+  }
+
+  const rawValue = compatibilityLine.replace(/^compatibility\s*:/i, "").trim()
+  const value = unwrapYamlString(rawValue).trim()
+
+  if (value.length === 0) {
+    return null
+  }
+
+  if ([...value].length > 500) {
+    throw new Error("Skill compatibility notes must be 500 characters or fewer.")
+  }
+
+  return value
+}
+
+function unwrapYamlString(value: string) {
+  if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+    try {
+      return JSON.parse(value) as string
+    } catch {
+      return value.slice(1, -1)
+    }
+  }
+
+  if (value.length >= 2 && value.startsWith("'") && value.endsWith("'")) {
+    return value.slice(1, -1).replace(/''/g, "'")
+  }
+
+  return value
+}
+
 function enrichSeedSkill(skill: SeedSkillCatalogEntry): SeedSkill {
   const skillMd = createSkillMd(skill)
   const estimatedTokens = calculateEstimatedTokens(skillMd)
@@ -256,7 +276,12 @@ function enrichSeedSkill(skill: SeedSkillCatalogEntry): SeedSkill {
     throw new Error(`Seed skill ${skill.slug} has an invalid SKILL.md estimate.`)
   }
 
-  return { ...skill, skillMd, estimatedTokens }
+  return {
+    ...skill,
+    skillMd,
+    estimatedTokens,
+    compatibilityNote: readCompatibilityNote(skillMd),
+  }
 }
 
 export const seedSkills = seedSkillCatalog.map(enrichSeedSkill)
@@ -284,10 +309,10 @@ async function seed() {
           sourceUrl: skill.sourceUrl,
           installCommand: skill.installCommand,
           docsUrl: skill.docsUrl,
+          compatibilityNote: skill.compatibilityNote,
           skillMd: skill.skillMd,
           estimatedTokens: skill.estimatedTokens,
           tags: skill.tags,
-          supportedAgents: skill.supportedAgents,
         })
         .onConflictDoUpdate({
           target: skills.slug,
@@ -297,10 +322,10 @@ async function seed() {
             sourceUrl: skill.sourceUrl,
             installCommand: skill.installCommand,
             docsUrl: skill.docsUrl,
+            compatibilityNote: skill.compatibilityNote,
             skillMd: skill.skillMd,
             estimatedTokens: skill.estimatedTokens,
             tags: skill.tags,
-            supportedAgents: skill.supportedAgents,
             updatedAt: new Date(),
           },
         })

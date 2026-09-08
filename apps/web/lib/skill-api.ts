@@ -30,10 +30,6 @@ export function createSkillListSearchParams(query: SkillListQuery) {
     params.set("tags", query.tags.join(","))
   }
 
-  if (query.agents.length > 0) {
-    params.set("agents", query.agents.join(","))
-  }
-
   if (query.page > 1) {
     params.set("page", String(query.page))
   }

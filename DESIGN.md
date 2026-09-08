@@ -164,9 +164,11 @@ Measured text pairs meet 4.5:1 in both themes, including muted text on muted sur
 
 ## Components
 
-- Leaderboard rows are the default discovery presentation. They emphasize rank, name, source identifier, short description, compatibility, Well done, Undercooked, comments, and optional trend delta.
-- Discovery cards are optional. They provide more description room plus tags and supported agents, while still showing explicit verdict counts.
-- Metadata rails show source path or identifier, compatibility, tags, source/documentation links, and added/updated dates.
+- Leaderboard rows are the default discovery presentation. They emphasize rank, name, source identifier, short description, Well done, Undercooked, comments, and optional trend delta.
+- Discovery cards are optional. They provide more description room plus tags, while still showing explicit verdict counts.
+- Metadata rails show source path or identifier, Requirements, tags, source/documentation links, and added/updated dates.
+- Requirements display only the trimmed optional `compatibility` value from the root `SKILL.md` frontmatter. Keep the author’s wording, accept at most 500 characters, and show `No requirements provided by the author.` when absent.
+- Never infer Requirements from prose, repositories, dependencies, or agent mentions. Do not show a “Tested with” label until the product collects evidence-based community reports.
 - Install blocks sit near the top of detail pages. Commands use Geist Mono, horizontal overflow, and persistent copy feedback.
 - Vote controls are quiet verdict controls. Well done and Undercooked actions each include the authoritative count and selected/pending/unavailable states.
 - Loading states use skeleton geometry that resembles the final list, detail header, install block, and metadata rail.

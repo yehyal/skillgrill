@@ -58,6 +58,7 @@ export const skills = pgTable(
     sourceUrl: text("source_url"),
     installCommand: text("install_command"),
     docsUrl: text("docs_url"),
+    compatibilityNote: text("compatibility_note"),
     skillMd: text("skill_md"),
     estimatedTokens: integer("estimated_tokens"),
     tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
@@ -113,6 +114,10 @@ export const skills = pgTable(
     skillMdEstimateCheck: check(
       "skills_skill_md_estimate_check",
       sql`(${table.skillMd} is null and ${table.estimatedTokens} is null) or (${table.skillMd} is not null and ${table.estimatedTokens} is not null and ${table.estimatedTokens} > 0 and ${table.estimatedTokens} = ceil(char_length(${table.skillMd}) / 4.0))`
+    ),
+    compatibilityNoteCheck: check(
+      "skills_compatibility_note_check",
+      sql`${table.compatibilityNote} is null or (char_length(${table.compatibilityNote}) between 1 and 500)`
     ),
   })
 )

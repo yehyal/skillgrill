@@ -5,7 +5,7 @@ import type { SkillListItem } from "@skill-grill/shared"
 import { SkillVerdictCounts } from "@/components/skills/skill-verdict-counts"
 import { SkillTopReasonLabel } from "@/components/skills/skill-reason-display"
 import { Badge } from "@/components/ui/badge"
-import { formatAgentLabel, formatTagLabel } from "@/lib/skills"
+import { formatTagLabel } from "@/lib/skills"
 
 export function SkillCard({ skill, index }: { skill: SkillListItem; index: number }) {
   return (
@@ -46,10 +46,7 @@ export function SkillCard({ skill, index }: { skill: SkillListItem; index: numbe
           )) : <span className="text-xs text-muted-foreground">No tags listed</span>}
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-          <p className="min-w-0 truncate text-xs text-muted-foreground" title={skill.supportedAgents.map(formatAgentLabel).join(", ")}>
-            {skill.supportedAgents.map(formatAgentLabel).join(" · ") || "Agent compatibility not listed"}
-          </p>
+        <div className="flex min-w-0 justify-end border-t border-border pt-3">
           <SkillVerdictCounts
             className="shrink-0"
             upvotesCount={skill.upvotesCount}

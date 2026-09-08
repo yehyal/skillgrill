@@ -1,0 +1,2 @@
+ALTER TABLE "skills" ADD COLUMN "compatibility_note" text;--> statement-breakpoint
+ALTER TABLE "skills" ADD CONSTRAINT "skills_compatibility_note_check" CHECK ("skills"."compatibility_note" is null or (char_length("skills"."compatibility_note") between 1 and 500));

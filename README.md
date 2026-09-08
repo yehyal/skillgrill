@@ -13,16 +13,16 @@
   <a href="https://github.com/yehyal/skillgrill/actions/workflows/ci.yml"><img src="https://github.com/yehyal/skillgrill/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
 </p>
 
-Skill Grill is a directory for discovering, trying, and judging skills made for AI agents. It keeps the catalog compact and practical: browse what a skill does, see which agents it supports, try the install command, and leave a community verdict.
+Skill Grill is a directory for discovering, trying, and judging skills made for AI agents. It keeps the catalog compact and practical: browse what a skill does, read author-provided requirements where available, try the install command, and leave a community verdict.
 
 ## Status
 
 Skill Grill is live at [skillgrill.dev](https://skillgrill.dev) and remains under active development. The repository currently includes:
 
 - A public home page, searchable directory, and skill detail pages.
-- All Time and seven-day Trending rankings, plus tag and agent filters.
+- All Time and seven-day Trending rankings, plus task-oriented tag discovery.
 - List and card discovery views with a remembered local preference.
-- Skill descriptions, source and documentation links, install commands, tags, and compatibility metadata.
+- Skill descriptions, source and documentation links, install commands, tags, and author-provided requirements notes where available.
 - Well-done and undercooked voting, optional verdict reasons, comments, reporting, and GitHub authentication.
 - Optimistic community interactions, light/dark/system themes, and a Cloudflare Worker API backed by Supabase and Drizzle.
 

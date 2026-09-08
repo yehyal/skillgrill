@@ -392,7 +392,6 @@ app.get("/api/skills", async (context) => {
         name: row.name,
         description: row.description,
         tags: row.tags,
-        supportedAgents: row.supportedAgents,
         upvotesCount: row.upvotesCount,
         downvotesCount: row.downvotesCount,
         commentsCount: row.commentsCount,
@@ -446,10 +445,10 @@ app.get("/api/skills/:slug", async (context) => {
         sourceUrl: skills.sourceUrl,
         installCommand: skills.installCommand,
         docsUrl: skills.docsUrl,
+        compatibilityNote: skills.compatibilityNote,
         skillMd: skills.skillMd,
         estimatedTokens: skills.estimatedTokens,
         tags: skills.tags,
-        supportedAgents: skills.supportedAgents,
         createdAt: skills.createdAt,
         updatedAt: skills.updatedAt,
         skillId: skills.id,
@@ -898,7 +897,7 @@ app.put("/api/skills/:slug/vote", async (context) => {
     return jsonError(
       context,
       "invalid_request",
-      "The request body must be valid JSON containing a verdict and optional compatible reason.",
+      "The request body must be valid JSON containing a verdict and optional reason.",
       400
     )
   }
@@ -909,7 +908,7 @@ app.put("/api/skills/:slug/vote", async (context) => {
     return jsonError(
       context,
       "invalid_request",
-      "The request body must contain a verdict and a compatible reason, or { value: null }.",
+      "The request body must contain a verdict and a valid reason, or { value: null }.",
       400
     )
   }
@@ -1333,7 +1332,6 @@ function parseSkillListQuery(
       q: query.q?.trim() || undefined,
       sort,
       tags: parseFilterValues(query.tags),
-      agents: parseFilterValues(query.agents),
       page,
       limit,
     },
@@ -1379,8 +1377,7 @@ function buildSkillWhere(query: SkillListQuery) {
     const searchCondition = or(
       ilike(skills.name, pattern),
       ilike(skills.description, pattern),
-      sql`${skills.tags}::text ILIKE ${pattern}`,
-      sql`${skills.supportedAgents}::text ILIKE ${pattern}`
+      sql`${skills.tags}::text ILIKE ${pattern}`
     )
 
     if (searchCondition) {
@@ -1392,15 +1389,6 @@ function buildSkillWhere(query: SkillListQuery) {
     conditions.push(
       sql`${skills.tags} && ARRAY[${sql.join(
         query.tags.map((tag) => sql`${tag}`),
-        sql`, `
-      )}]::text[]`
-    )
-  }
-
-  if (query.agents.length > 0) {
-    conditions.push(
-      sql`${skills.supportedAgents} && ARRAY[${sql.join(
-        query.agents.map((agent) => sql`${agent}`),
         sql`, `
       )}]::text[]`
     )
@@ -1424,7 +1412,6 @@ function getSkillListRows(
         name: skills.name,
         description: skills.description,
         tags: skills.tags,
-        supportedAgents: skills.supportedAgents,
         upvotesCount: skills.upvotesCount,
         downvotesCount: skills.downvotesCount,
         commentsCount: skills.commentsCount,
@@ -1460,7 +1447,6 @@ function getSkillListRows(
       name: skills.name,
       description: skills.description,
       tags: skills.tags,
-      supportedAgents: skills.supportedAgents,
       upvotesCount: skills.upvotesCount,
       downvotesCount: skills.downvotesCount,
       commentsCount: skills.commentsCount,

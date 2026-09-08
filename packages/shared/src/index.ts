@@ -10,7 +10,6 @@ export type SkillListQuery = {
   q?: string
   sort: SkillSort
   tags: string[]
-  agents: string[]
   page: number
   limit: number
 }
@@ -21,7 +20,6 @@ export type SkillListItem = {
   name: string
   description: string
   tags: string[]
-  supportedAgents: string[]
   upvotesCount: number
   downvotesCount: number
   commentsCount: number
@@ -38,10 +36,10 @@ export type SkillDetail = {
   sourceUrl: string | null
   installCommand: string | null
   docsUrl: string | null
+  compatibilityNote: string | null
   estimatedTokens: number | null
   files: SkillFile[]
   tags: string[]
-  supportedAgents: string[]
   createdAt: string
   updatedAt: string
 }

@@ -9,9 +9,8 @@ import { SkillListSkeleton } from "@/components/skills/skill-list-skeleton"
 import { Button } from "@/components/ui/button"
 import { useSkillListQuery } from "@/lib/skill-queries"
 
-const previewBase: Pick<SkillListQuery, "tags" | "agents" | "page"> = {
+const previewBase: Pick<SkillListQuery, "tags" | "page"> = {
   tags: [],
-  agents: [],
   page: 1,
 }
 
@@ -125,7 +124,7 @@ export function HomeDiscovery() {
             <div className="grid gap-5 sm:grid-cols-3">
               <div className="pt-3">
                 <h3 className="text-sm font-semibold">Find the right fit.</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Search by the task or agent you have in front of you.</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">Search by the task or tag you have in front of you.</p>
               </div>
               <div className=" pt-3">
                 <h3 className="text-sm font-semibold">Put it to work.</h3>

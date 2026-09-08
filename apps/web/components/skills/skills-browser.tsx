@@ -26,9 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  formatAgentLabel,
   formatTagLabel,
-  skillAgentOptions,
   skillTagOptions,
 } from "@/lib/skills"
 import { useSkillListQuery } from "@/lib/skill-queries"
@@ -55,7 +53,6 @@ export function SkillsBrowser() {
       q: params.get("q")?.trim() || undefined,
       sort,
       tags: params.get("tags")?.split(",").filter(Boolean) ?? [],
-      agents: params.get("agents")?.split(",").filter(Boolean) ?? [],
       page: Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1,
       limit: 12,
     }
@@ -112,12 +109,10 @@ export function SkillsBrowser() {
 
   const currentSort = query.sort
   const currentTag = query.tags[0] ?? "all"
-  const currentAgent = query.agents[0] ?? "all"
   const currentPage = query.page
   const hasFilters = Boolean(
     query.q ||
       query.tags.length > 0 ||
-      query.agents.length > 0 ||
       currentSort === "trending"
   )
 
@@ -200,9 +195,9 @@ export function SkillsBrowser() {
                     setSearch(event.target.value)
                     setSearchIsDirty(true)
                   }}
-                  placeholder="Search by name, description, tag, or agent"
+                  placeholder="Search by name, description, or tag"
                   className="pl-9"
-                  aria-label="Search by name, description, tag, or agent"
+                  aria-label="Search by name, description, or tag"
                 />
               </span>
             </label>
@@ -211,8 +206,8 @@ export function SkillsBrowser() {
             </Button>
           </form>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid min-w-0 gap-2 text-xs font-medium text-foreground">
+          <div className="flex items-end">
+            <label className="grid w-full min-w-0 gap-2 text-xs font-medium text-foreground lg:ml-auto lg:max-w-[22rem]">
               <span>Tag</span>
               <Select value={currentTag} onValueChange={(value) => updateUrl({ tags: value === "all" ? null : value, page: null })}>
                 <SelectTrigger aria-label="Filter by tag">
@@ -223,23 +218,6 @@ export function SkillsBrowser() {
                   {skillTagOptions.map((tag) => (
                     <SelectItem key={tag} value={tag}>
                       {formatTagLabel(tag)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-
-            <label className="grid min-w-0 gap-2 text-xs font-medium text-foreground">
-              <span>Agent</span>
-              <Select value={currentAgent} onValueChange={(value) => updateUrl({ agents: value === "all" ? null : value, page: null })}>
-                <SelectTrigger aria-label="Filter by agent">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All agents</SelectItem>
-                  {skillAgentOptions.map((agent) => (
-                    <SelectItem key={agent} value={agent}>
-                      {formatAgentLabel(agent)}
                     </SelectItem>
                   ))}
                 </SelectContent>

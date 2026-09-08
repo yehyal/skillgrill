@@ -36,7 +36,7 @@ export default function Home() {
                     />
                     <Input
                       name="q"
-                      placeholder="Search by name, task, tag, or agent"
+                      placeholder="Search by name, description, or tag"
                       className="pl-9"
                     />
                   </span>
@@ -63,7 +63,7 @@ export default function Home() {
           <section aria-labelledby="shortcuts-title">
             <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
               <h2 id="shortcuts-title" className="text-sm font-semibold">
-                Start with compatibility
+                Browse by task
               </h2>
               <Button asChild variant="ghost" size="sm">
                 <Link href="/skills">
@@ -73,10 +73,10 @@ export default function Home() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {[
-                ["Codex", "/skills?agents=codex"],
-                ["Claude Code", "/skills?agents=claude-code"],
-                ["Cursor", "/skills?agents=cursor"],
-                ["Any agent", "/skills?agents=generic"],
+                ["Design", "/skills?tags=design"],
+                ["Prompting", "/skills?tags=prompting"],
+                ["Frontend", "/skills?tags=frontend"],
+                ["Writing", "/skills?tags=writing"],
               ].map(([label, href]) => (
                 <Link
                   key={label}
