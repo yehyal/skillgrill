@@ -82,7 +82,7 @@ export type AnalyticsEventMap = {
 }
 
 export type AnalyticsEventName = keyof AnalyticsEventMap
-export type AnalyticsPreference = "enabled" | "disabled" | "unavailable"
+export type AnalyticsPreference = "enabled" | "disabled" | "browser_blocked" | "unavailable"
 
 const ANALYTICS_HOSTNAME = "skillgrill.dev"
 const POSTHOG_HOST = "https://eu.i.posthog.com"
@@ -200,7 +200,6 @@ export function initializeAnalytics() {
       disable_conversations: true,
       disable_capture_url_hashes: true,
       respect_dnt: true,
-      ip: false,
       save_campaign_params: false,
       before_send: sanitizeAnalyticsEvent,
     })
@@ -256,6 +255,10 @@ export function isAnalyticsOptedOut() {
 export function getAnalyticsPreference(): AnalyticsPreference {
   if (!isAnalyticsEligible()) {
     return "unavailable"
+  }
+
+  if (isDoNotTrackEnabled()) {
+    return "browser_blocked"
   }
 
   return isAnalyticsOptedOut() ? "disabled" : "enabled"

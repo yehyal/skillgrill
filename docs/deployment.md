@@ -69,7 +69,7 @@ The frontend uses `posthog-js` only when the production browser hostname is `ski
 Create and configure the PostHog project manually before enabling the production flag:
 
 - Create an EU Cloud project and enable cookieless server-hash mode.
-- Confirm IP capture is disabled.
+- Enable the PostHog project-level **Discard IP data** transformation and verify it with a captured production event. The browser SDK cannot enforce this setting.
 - Disable autocapture, session recordings, heatmaps, surveys, and exception collection at the project level as defense in depth.
 - Create the `Skill Grill MVP` dashboard with session-based discovery, evaluation, install, contribution, search-health, catalog, and acquisition views from the event contract in the privacy policy and product documentation.
 - Do not add a reverse proxy initially. Revisit a first-party Cloudflare proxy only if blocker-related undercounting becomes material.

@@ -51,7 +51,7 @@ export default function PrivacyPage() {
                   When enabled, PostHog Cloud EU processes anonymous, cookieless page and product-usage events to improve discovery and understand whether skills are evaluated and installed. Collected data includes sanitized page paths, coarse referral and UTM attribution, device and browser information supplied by the SDK, public skill identifiers, interaction types, result counts, and coarse text-length or token buckets.
                 </p>
                 <p>
-                  Skill Grill does not send PostHog account identity, raw searches, comments, reports, clipboard contents, skill-file contents, URL hashes, or unrestricted query parameters. Person profiles, IP capture, session replay, autocapture, heatmaps, surveys, and exception recording are disabled. Supabase authentication and existing theme and layout storage remain functional and separate from analytics.
+                  Skill Grill does not send PostHog account identity, raw searches, comments, reports, clipboard contents, skill-file contents, URL hashes, or unrestricted query parameters. Person profiles, session replay, autocapture, heatmaps, surveys, and exception recording are disabled in the app, and the PostHog project is configured to discard IP data. Supabase authentication and existing theme and layout storage remain functional and separate from analytics.
                 </p>
                 <AnalyticsPreference />
               </PolicySection>

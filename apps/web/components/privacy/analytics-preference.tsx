@@ -19,6 +19,7 @@ export function AnalyticsPreference() {
   )
 
   const isDisabled = preference === "disabled"
+  const isBrowserBlocked = preference === "browser_blocked"
   const isUnavailable = preference === "unavailable"
 
   function togglePreference() {
@@ -34,10 +35,18 @@ export function AnalyticsPreference() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <div>
           <p className="text-sm font-medium" role="status" aria-live="polite">
-            Anonymous analytics is {isUnavailable ? "not active in this environment" : isDisabled ? "disabled" : "enabled"}.
+            Anonymous analytics is {isUnavailable
+              ? "not active in this environment"
+              : isBrowserBlocked
+                ? "disabled by your browser privacy setting"
+                : isDisabled
+                  ? "disabled"
+                  : "enabled"}.
           </p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Your choice is stored only as an analytics opt-out preference.
+            {isBrowserBlocked
+              ? "Skill Grill respects your browser’s Do Not Track preference."
+              : "Your choice is stored only as an analytics opt-out preference."}
           </p>
         </div>
         <Button
@@ -45,10 +54,12 @@ export function AnalyticsPreference() {
           size="sm"
           variant="outline"
           onClick={togglePreference}
-          disabled={isUnavailable}
+          disabled={isUnavailable || isBrowserBlocked}
         >
           {isUnavailable
             ? "Analytics unavailable"
+            : isBrowserBlocked
+              ? "Disabled by browser"
             : isDisabled
               ? "Enable anonymous analytics"
               : "Disable anonymous analytics"}

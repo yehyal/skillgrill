@@ -212,11 +212,6 @@ function Breadcrumb({
         <li>
           <Link
             href="/skills"
-            onClick={skill ? () => captureAnalytics("skill_outbound_opened", {
-              skill_id: skill.id,
-              skill_slug: skill.slug,
-              destination: "catalog",
-            }) : undefined}
             className="rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             Skill directory
