@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
   title: "Contact | Skill Grill",
-  description: "Contact Skill Grill and its independent builder, @yehyal.",
+  description: "Contact Skill Grill and its independent builder, @yehyall.",
 }
 
 export default function ContactPage() {
