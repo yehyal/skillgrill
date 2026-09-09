@@ -12,8 +12,31 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   metadataBase: siteConfig.siteUrl ? new URL(siteConfig.siteUrl) : undefined,
-  title: siteConfig.name,
+  title: {
+    default: "Skill Grill: Reviews and Ratings for AI Agent Skills",
+    template: "%s | Skill Grill",
+  },
   description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+  openGraph: {
+    siteName: siteConfig.name,
+    type: "website",
+    title: "Skill Grill: Reviews and Ratings for AI Agent Skills",
+    description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+    images: [
+      {
+        url: "/assets/social-preview.png",
+        width: 1280,
+        height: 640,
+        alt: "Skill Grill: reviews and ratings for AI agent skills",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Skill Grill: Reviews and Ratings for AI Agent Skills",
+    description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+    images: ["/assets/social-preview.png"],
+  },
   ...(siteConfig.indexable
     ? {}
     : {

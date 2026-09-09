@@ -5,8 +5,11 @@ import { SiteShell } from "@/components/site-shell"
 import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
-  title: "About | Skill Grill",
+  title: "About",
   description: "Learn how Skill Grill reviews and ranks AI agent skills.",
+  alternates: { canonical: "/about/" },
+  openGraph: { type: "website", siteName: siteConfig.name, url: "/about/", title: "About | Skill Grill", description: "Learn how Skill Grill reviews and ranks AI agent skills.", images: ["/assets/social-preview.png"] },
+  twitter: { title: "About | Skill Grill", description: "Learn how Skill Grill reviews and ranks AI agent skills.", card: "summary_large_image", images: ["/assets/social-preview.png"] },
 }
 
 export default function AboutPage() {

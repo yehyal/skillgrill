@@ -1,32 +1,53 @@
-import { Suspense } from "react"
+import type { SkillListResponse } from "@skill-grill/shared"
 
-import { SkillListSkeleton } from "@/components/skills/skill-list-skeleton"
 import { SkillsBrowser } from "@/components/skills/skills-browser"
-import { PageContainer } from "@/components/page-container"
 import { SiteShell } from "@/components/site-shell"
+import { getPublishedSkillList } from "@/lib/skill-publishing"
+import { siteConfig } from "@/lib/site-config"
 
-export default function SkillsPage() {
+const isStaticExport = process.env.SKILL_GRILL_STATIC_EXPORT === "true"
+
+export const metadata = {
+  title: "Browse AI Agent Skills, Reviews and Ratings",
+  description: "Browse AI agent skills, compare verdicts and firsthand feedback, and check upstream reach before you install.",
+  alternates: { canonical: "/skills/" },
+  openGraph: {
+    type: "website" as const,
+    siteName: siteConfig.name,
+    title: "Browse AI Agent Skills, Reviews and Ratings | Skill Grill",
+    description: "Browse AI agent skills, compare verdicts and firsthand feedback, and check upstream reach before you install.",
+    url: "/skills/",
+    images: ["/assets/social-preview.png"],
+  },
+  twitter: {
+    card: "summary_large_image" as const,
+    title: "Browse AI Agent Skills, Reviews and Ratings | Skill Grill",
+    description: "Browse AI agent skills, compare verdicts and firsthand feedback, and check upstream reach before you install.",
+    images: ["/assets/social-preview.png"],
+  },
+}
+
+export default async function SkillsPage() {
+  const initialData = await getDirectoryPublishingData()
+
   return (
     <SiteShell>
-      <Suspense
-        fallback={
-          <main id="main-content" tabIndex={-1} className="flex-1">
-            <PageContainer className="py-8 sm:py-10 lg:py-12">
-              <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
-                Skill directory
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold leading-none sm:text-4xl">
-                Find a skill for the next task.
-              </h1>
-              <div className="mt-8">
-                <SkillListSkeleton />
-              </div>
-            </PageContainer>
-          </main>
-        }
-      >
-        <SkillsBrowser />
-      </Suspense>
+      <SkillsBrowser initialData={initialData ?? undefined} />
     </SiteShell>
   )
+}
+
+async function getDirectoryPublishingData(): Promise<SkillListResponse | null> {
+  try {
+    return await getPublishedSkillList(
+      { tags: [], page: 1, limit: 12, sort: "popular" },
+      { required: isStaticExport }
+    )
+  } catch (error) {
+    if (isStaticExport) {
+      throw error
+    }
+
+    return null
+  }
 }

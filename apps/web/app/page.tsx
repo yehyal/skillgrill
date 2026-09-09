@@ -1,3 +1,5 @@
+import type { SkillListQuery, SkillListResponse } from "@skill-grill/shared"
+
 import { PageContainer } from "@/components/page-container"
 import { SiteShell } from "@/components/site-shell"
 import { HomeDiscovery } from "@/components/skills/home-discovery"
@@ -5,11 +7,54 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import Link from "next/link"
+import { getPublishedSkillList } from "@/lib/skill-publishing"
+import { siteConfig } from "@/lib/site-config"
 
-export default function Home() {
+const isStaticExport = process.env.SKILL_GRILL_STATIC_EXPORT === "true"
+
+export const metadata = {
+  title: { absolute: "Skill Grill: Reviews and Ratings for AI Agent Skills" },
+  description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website" as const,
+    siteName: siteConfig.name,
+    title: "Skill Grill: Reviews and Ratings for AI Agent Skills",
+    description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+    url: "/",
+    images: ["/assets/social-preview.png"],
+  },
+  twitter: {
+    card: "summary_large_image" as const,
+    title: "Skill Grill: Reviews and Ratings for AI Agent Skills",
+    description: "Firsthand reviews and ratings for AI agent skills that need to deliver.",
+    images: ["/assets/social-preview.png"],
+  },
+}
+
+export default async function Home() {
+  const [initialLeaderboardData, initialRecentData] = await Promise.all([
+    getPublishingList({ tags: [], page: 1, limit: 5, sort: "popular" }),
+    getPublishingList({ tags: [], page: 1, limit: 4, sort: "newest" }),
+  ])
+
+  const websiteStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: `${siteConfig.siteUrl ?? "https://skillgrill.dev"}/`,
+  }
+
   return (
-    <SiteShell>
-      <main id="main-content" tabIndex={-1} className="flex-1">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c"),
+        }}
+      />
+      <SiteShell>
+        <main id="main-content" tabIndex={-1} className="flex-1">
         <section aria-labelledby="hero-title" className="border-b border-border bg-card">
           <PageContainer className="grid gap-5 py-8 md:gap-8 sm:py-10 md:grid-cols-[minmax(0,1fr)_16rem] md:items-end lg:py-10">
             <div className="max-w-[44rem]">
@@ -90,8 +135,24 @@ export default function Home() {
           </section>
         </PageContainer>
 
-        <HomeDiscovery />
-      </main>
-    </SiteShell>
+        <HomeDiscovery
+          initialLeaderboardData={initialLeaderboardData ?? undefined}
+          initialRecentData={initialRecentData ?? undefined}
+        />
+        </main>
+      </SiteShell>
+    </>
   )
+}
+
+async function getPublishingList(query: SkillListQuery): Promise<SkillListResponse | null> {
+  try {
+    return await getPublishedSkillList(query, { required: isStaticExport })
+  } catch (error) {
+    if (isStaticExport) {
+      throw error
+    }
+
+    return null
+  }
 }

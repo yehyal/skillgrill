@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-import { getPublishedSkillSlugs } from "@/lib/skill-publishing"
+import { getPublishedSkillCatalog } from "@/lib/skill-publishing"
 import { siteConfig } from "@/lib/site-config"
 
 const isStaticExport = process.env.SKILL_GRILL_STATIC_EXPORT === "true"
@@ -12,15 +12,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return []
   }
 
-  const slugs = await getPublishedSkillSlugs({ required: isStaticExport })
-  const staticPaths = ["", "/skills", "/about", "/contact", "/privacy", "/terms"]
+  const catalog = await getPublishedSkillCatalog({ required: isStaticExport })
+  const staticPaths = ["/", "/skills/", "/about/", "/contact/", "/privacy/", "/terms/"]
 
   return [
     ...staticPaths.map((path) => ({
-      url: `${siteConfig.siteUrl}${path || "/"}`,
+      url: `${siteConfig.siteUrl}${path}`,
     })),
-    ...slugs.map((slug) => ({
+    ...catalog.map(({ slug, lastModified }) => ({
       url: `${siteConfig.siteUrl}/skills/${encodeURIComponent(slug)}/`,
+      lastModified,
     })),
   ]
 }

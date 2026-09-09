@@ -1,8 +1,16 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+  type MouseEvent,
+} from "react"
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -10,7 +18,7 @@ import {
   MagnifyingGlassIcon,
   RowsIcon,
 } from "@radix-ui/react-icons"
-import type { SkillListQuery, SkillSort } from "@skill-grill/shared"
+import type { SkillListQuery, SkillListResponse, SkillSort } from "@skill-grill/shared"
 
 import { PageContainer } from "@/components/page-container"
 import { SkillCard } from "@/components/skills/skill-card"
@@ -38,14 +46,19 @@ import { useSkillListQuery } from "@/lib/skill-queries"
 
 const DIRECTORY_VIEW_KEY = "skill-grill:directory-view"
 const DIRECTORY_VIEW_EVENT = "skill-grill:directory-view-change"
+const DIRECTORY_URL_EVENT = "skill-grill:directory-url-change"
 type DirectoryView = "list" | "card"
 let temporaryDirectoryView: DirectoryView = "list"
 
-export function SkillsBrowser() {
-  const router = useRouter()
+export function SkillsBrowser({ initialData }: { initialData?: SkillListResponse }) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const [search, setSearch] = useState(() => searchParams.get("q") ?? "")
+  const urlKey = useSyncExternalStore(
+    subscribeToDirectoryUrl,
+    getDirectoryUrlSearch,
+    getServerDirectoryUrlSearch
+  )
+  const searchParams = useMemo(() => new URLSearchParams(urlKey), [urlKey])
+  const [search, setSearch] = useState("")
   const [searchIsDirty, setSearchIsDirty] = useState(false)
   const pendingSearchRef = useRef<{
     query: string
@@ -53,7 +66,6 @@ export function SkillsBrowser() {
     ranking: AnalyticsRanking
   } | null>(null)
   const view = useSyncExternalStore(subscribeToDirectoryView, getDirectoryView, getServerDirectoryView)
-  const urlKey = searchParams.toString()
   const query = useMemo<SkillListQuery>(() => {
     const params = new URLSearchParams(urlKey)
     const rawPage = Number(params.get("page") ?? "1")
@@ -67,7 +79,15 @@ export function SkillsBrowser() {
       limit: 12,
     }
   }, [urlKey])
-  const listQuery = useSkillListQuery(query)
+  const hasExactDirectorySnapshot =
+    !searchParams.has("q") &&
+    !searchParams.has("tags") &&
+    !searchParams.has("sort") &&
+    !searchParams.has("page")
+  const listQuery = useSkillListQuery(
+    query,
+    hasExactDirectorySnapshot ? initialData : undefined
+  )
   const result = listQuery.data
   const error = listQuery.error instanceof Error ? listQuery.error.message : null
   const currentSort = query.sort
@@ -105,7 +125,7 @@ export function SkillsBrowser() {
   }, [currentSort, currentTag, listQuery.isSuccess, query.q, result])
 
   function updateUrl(updates: Record<string, string | null>) {
-    const nextParams = new URLSearchParams(searchParams.toString())
+    const nextParams = new URLSearchParams(urlKey)
 
     for (const [key, value] of Object.entries(updates)) {
       if (value) {
@@ -116,7 +136,7 @@ export function SkillsBrowser() {
     }
 
     const nextQuery = nextParams.toString()
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+    replaceDirectoryUrl(nextQuery ? `${pathname}?${nextQuery}` : pathname)
     if (updates.page) {
       document.getElementById("directory-results")?.scrollIntoView({ block: "start" })
       document.getElementById("results-heading")?.focus({ preventScroll: true })
@@ -124,7 +144,7 @@ export function SkillsBrowser() {
   }
 
   function rankingHref(sort: "popular" | "trending") {
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(urlKey)
     params.delete("page")
 
     if (sort === "popular") {
@@ -137,9 +157,36 @@ export function SkillsBrowser() {
     return nextQuery ? `${pathname}?${nextQuery}` : pathname
   }
 
+  function handleRankingClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    sort: "popular" | "trending"
+  ) {
+    pendingSearchRef.current = null
+    if (sort !== currentSort) {
+      captureAnalytics("directory_filter_changed", {
+        filter_type: "ranking",
+        value: sort === "popular" ? "all_time" : "trending",
+      })
+    }
+
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    replaceDirectoryUrl(rankingHref(sort))
+  }
+
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nextSearch = (searchIsDirty ? search : searchParams.get("q") ?? "").trim()
+    const nextSearch = (searchIsDirty ? search : query.q ?? "").trim()
     pendingSearchRef.current = {
       query: nextSearch,
       tag: currentTag,
@@ -159,7 +206,7 @@ export function SkillsBrowser() {
     }
     setSearch("")
     setSearchIsDirty(false)
-    router.replace(pathname, { scroll: false })
+    replaceDirectoryUrl(pathname)
   }
 
   return (
@@ -184,12 +231,7 @@ export function SkillsBrowser() {
             <nav aria-label="Skill ranking" className="flex gap-5">
               <Link
                 href={rankingHref("popular")}
-                onClick={() => {
-                  pendingSearchRef.current = null
-                  if (currentSort !== "popular") {
-                    captureAnalytics("directory_filter_changed", { filter_type: "ranking", value: "all_time" })
-                  }
-                }}
+                onClick={(event) => handleRankingClick(event, "popular")}
                 aria-current={currentSort === "popular" ? "page" : undefined}
                 className={`border-b-2 px-0.5 pb-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${currentSort === "popular" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
               >
@@ -197,12 +239,7 @@ export function SkillsBrowser() {
               </Link>
               <Link
                 href={rankingHref("trending")}
-                onClick={() => {
-                  pendingSearchRef.current = null
-                  if (currentSort !== "trending") {
-                    captureAnalytics("directory_filter_changed", { filter_type: "ranking", value: "trending" })
-                  }
-                }}
+                onClick={(event) => handleRankingClick(event, "trending")}
                 aria-current={currentSort === "trending" ? "page" : undefined}
                 className={`border-b-2 px-0.5 pb-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${currentSort === "trending" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
               >
@@ -248,7 +285,7 @@ export function SkillsBrowser() {
               <span className="relative block">
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
-                  value={searchIsDirty ? search : searchParams.get("q") ?? ""}
+                  value={searchIsDirty ? search : query.q ?? ""}
                   onChange={(event) => {
                     setSearch(event.target.value)
                     setSearchIsDirty(true)
@@ -406,6 +443,29 @@ function subscribeToDirectoryView(onStoreChange: () => void) {
     window.removeEventListener("storage", onStoreChange)
     window.removeEventListener(DIRECTORY_VIEW_EVENT, onStoreChange)
   }
+}
+
+function subscribeToDirectoryUrl(onStoreChange: () => void) {
+  window.addEventListener("popstate", onStoreChange)
+  window.addEventListener(DIRECTORY_URL_EVENT, onStoreChange)
+
+  return () => {
+    window.removeEventListener("popstate", onStoreChange)
+    window.removeEventListener(DIRECTORY_URL_EVENT, onStoreChange)
+  }
+}
+
+function getDirectoryUrlSearch() {
+  return window.location.search.slice(1)
+}
+
+function getServerDirectoryUrlSearch() {
+  return ""
+}
+
+function replaceDirectoryUrl(url: string) {
+  window.history.replaceState(window.history.state, "", url)
+  window.dispatchEvent(new Event(DIRECTORY_URL_EVENT))
 }
 
 function getDirectoryView(): DirectoryView {

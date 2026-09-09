@@ -5,8 +5,11 @@ import { SiteShell } from "@/components/site-shell"
 import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
-  title: "Contact | Skill Grill",
+  title: "Contact",
   description: "Contact Skill Grill and its independent builder, @yehyall.",
+  alternates: { canonical: "/contact/" },
+  openGraph: { type: "website", siteName: siteConfig.name, url: "/contact/", title: "Contact | Skill Grill", description: "Contact Skill Grill and its independent builder, @yehyall.", images: ["/assets/social-preview.png"] },
+  twitter: { title: "Contact | Skill Grill", description: "Contact Skill Grill and its independent builder, @yehyall.", card: "summary_large_image", images: ["/assets/social-preview.png"] },
 }
 
 export default function ContactPage() {

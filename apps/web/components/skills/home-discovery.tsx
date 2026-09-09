@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { SkillListQuery } from "@skill-grill/shared"
+import type { SkillListQuery, SkillListResponse } from "@skill-grill/shared"
 
 import { PageContainer } from "@/components/page-container"
 import { SkillListRow } from "@/components/skills/skill-list-row"
@@ -14,18 +14,24 @@ const previewBase: Pick<SkillListQuery, "tags" | "page"> = {
   page: 1,
 }
 
-export function HomeDiscovery() {
+export function HomeDiscovery({
+  initialLeaderboardData,
+  initialRecentData,
+}: {
+  initialLeaderboardData?: SkillListResponse
+  initialRecentData?: SkillListResponse
+}) {
   const [ranking, setRanking] = useState<"popular" | "trending">("popular")
   const leaderboardQuery = useSkillListQuery({
     ...previewBase,
     sort: ranking,
     limit: 5,
-  })
+  }, ranking === "popular" ? initialLeaderboardData : undefined)
   const recentQuery = useSkillListQuery({
     ...previewBase,
     sort: "newest",
     limit: 4,
-  })
+  }, initialRecentData)
   const leaderboardError = getErrorMessage(leaderboardQuery.error)
   const recentError = getErrorMessage(recentQuery.error)
 

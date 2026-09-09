@@ -48,10 +48,15 @@ export const skillQueryKeys = {
   comments: (slug: string) => ["skills", "comments", slug] as const,
 }
 
-export function useSkillListQuery(query: SkillListQuery) {
+export function useSkillListQuery(
+  query: SkillListQuery,
+  initialData?: SkillListResponse
+) {
   return useQuery({
     queryKey: skillQueryKeys.list(query),
     queryFn: ({ signal }) => fetchSkillList(query, signal),
+    initialData,
+    initialDataUpdatedAt: initialData ? 0 : undefined,
     staleTime: 60_000,
     retry: shouldRetry,
   })

@@ -6,8 +6,11 @@ import { SiteShell } from "@/components/site-shell"
 import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
-  title: "Privacy | Skill Grill",
+  title: "Privacy",
   description: "How Skill Grill handles identity data, anonymous product analytics, ratings, comments, reports, and browser storage.",
+  alternates: { canonical: "/privacy/" },
+  openGraph: { type: "website", siteName: siteConfig.name, url: "/privacy/", title: "Privacy | Skill Grill", description: "How Skill Grill handles identity data, anonymous product analytics, ratings, comments, reports, and browser storage.", images: ["/assets/social-preview.png"] },
+  twitter: { title: "Privacy | Skill Grill", description: "How Skill Grill handles identity data, anonymous product analytics, ratings, comments, reports, and browser storage.", card: "summary_large_image", images: ["/assets/social-preview.png"] },
 }
 
 export default function PrivacyPage() {

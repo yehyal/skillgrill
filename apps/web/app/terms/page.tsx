@@ -5,8 +5,11 @@ import { SiteShell } from "@/components/site-shell"
 import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
-  title: "Terms | Skill Grill",
+  title: "Terms",
   description: "The community rules and service terms for Skill Grill.",
+  alternates: { canonical: "/terms/" },
+  openGraph: { type: "website", siteName: siteConfig.name, url: "/terms/", title: "Terms | Skill Grill", description: "The community rules and service terms for Skill Grill.", images: ["/assets/social-preview.png"] },
+  twitter: { title: "Terms | Skill Grill", description: "The community rules and service terms for Skill Grill.", card: "summary_large_image", images: ["/assets/social-preview.png"] },
 }
 
 export default function TermsPage() {

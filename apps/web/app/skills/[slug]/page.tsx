@@ -28,13 +28,14 @@ export async function generateMetadata({
 
   if (!result) {
     return {
-      title: `Skill not found | ${siteConfig.name}`,
+      title: "Skill not found",
       robots: { index: false, follow: false },
     }
   }
 
   const skill = result.data
-  const title = `${skill.name} | ${siteConfig.name}`
+  const title = skill.name
+  const socialTitle = `${skill.name} | ${siteConfig.name}`
   const description = toMetadataDescription(skill.description)
   const canonicalPath = `/skills/${encodeURIComponent(skill.slug)}/`
 
@@ -45,14 +46,16 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       siteName: siteConfig.name,
-      title,
+      title: socialTitle,
       description,
       url: canonicalPath,
+      images: ["/assets/social-preview.png"],
     },
     twitter: {
-      card: "summary",
-      title,
+      card: "summary_large_image",
+      title: socialTitle,
       description,
+      images: ["/assets/social-preview.png"],
     },
     robots: siteConfig.indexable
       ? { index: true, follow: true }

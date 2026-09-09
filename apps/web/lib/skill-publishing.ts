@@ -1,14 +1,24 @@
 import "server-only"
 
-import type { SkillDetailResponse, SkillListResponse } from "@skill-grill/shared"
+import type {
+  SkillDetailResponse,
+  SkillListItem,
+  SkillListQuery,
+  SkillListResponse,
+} from "@skill-grill/shared"
 import { cache } from "react"
 
 import { getApiBaseUrl } from "@/lib/api"
 
 const skillListPageSize = 50
 
-const loadPublishedSkillSlugs = cache(async (apiBaseUrl: string) => {
-  const slugs: string[] = []
+export type PublishedSkillCatalogEntry = {
+  slug: string
+  lastModified: string
+}
+
+const loadPublishedSkillCatalog = cache(async (apiBaseUrl: string) => {
+  const skills: PublishedSkillCatalogEntry[] = []
   const seenSlugs = new Set<string>()
   let expectedTotal: number | null = null
   let expectedTotalPages: number | null = null
@@ -28,7 +38,11 @@ const loadPublishedSkillSlugs = cache(async (apiBaseUrl: string) => {
       )
     }
 
-    const result = parseSkillListPage(await response.json(), page)
+    const result = parseSkillListPage(await response.json(), {
+      page,
+      limit: skillListPageSize,
+      sort: "newest",
+    })
 
     if (expectedTotal === null) {
       expectedTotal = result.pagination.total
@@ -46,7 +60,10 @@ const loadPublishedSkillSlugs = cache(async (apiBaseUrl: string) => {
       }
 
       seenSlugs.add(skill.slug)
-      slugs.push(skill.slug)
+      skills.push({
+        slug: skill.slug,
+        lastModified: skill.freshness.catalogUpdatedAt,
+      })
     }
 
     if (page >= result.pagination.totalPages || result.data.length === 0) {
@@ -56,14 +73,41 @@ const loadPublishedSkillSlugs = cache(async (apiBaseUrl: string) => {
     page += 1
   }
 
-  if (expectedTotal !== slugs.length) {
+  if (expectedTotal !== skills.length) {
     throw new Error(
-      `The skill catalog reported ${expectedTotal ?? 0} skills but returned ${slugs.length}.`
+      `The skill catalog reported ${expectedTotal ?? 0} skills but returned ${skills.length}.`
     )
   }
 
-  return slugs
+  return skills
 })
+
+const loadPublishedSkillList = cache(
+  async (apiBaseUrl: string, query: SkillListQuery) => {
+    const requestUrl = new URL("/api/skills", apiBaseUrl)
+    requestUrl.searchParams.set("limit", String(query.limit))
+    requestUrl.searchParams.set("page", String(query.page))
+    requestUrl.searchParams.set("sort", query.sort)
+
+    if (query.q) {
+      requestUrl.searchParams.set("q", query.q)
+    }
+
+    if (query.tags.length > 0) {
+      requestUrl.searchParams.set("tags", query.tags.join(","))
+    }
+
+    const response = await fetch(requestUrl)
+
+    if (!response.ok) {
+      throw new Error(
+        `Could not load the published skill list (HTTP ${response.status}).`
+      )
+    }
+
+    return parseSkillListPage(await response.json(), query)
+  }
+)
 
 const loadPublishedSkillDetail = cache(
   async (apiBaseUrl: string, slug: string): Promise<SkillDetailResponse | null> => {
@@ -85,19 +129,46 @@ const loadPublishedSkillDetail = cache(
 )
 
 export async function getPublishedSkillSlugs(options?: { required?: boolean }) {
+  const skills = await getPublishedSkillCatalog(options)
+  return skills.map((skill) => skill.slug)
+}
+
+export async function getPublishedSkillCatalog(options?: { required?: boolean }) {
   const apiBaseUrl = getPublishingApiBaseUrl(options?.required ?? false)
 
   if (!apiBaseUrl) {
     return []
   }
 
-  const slugs = await loadPublishedSkillSlugs(apiBaseUrl)
+  const skills = await loadPublishedSkillCatalog(apiBaseUrl)
 
-  if (options?.required && slugs.length === 0) {
+  if (options?.required && skills.length === 0) {
     throw new Error("Static publishing requires at least one active skill.")
   }
 
-  return slugs
+  return skills
+}
+
+export async function getPublishedSkillList(
+  query: SkillListQuery,
+  options?: { required?: boolean }
+) {
+  const required = options?.required ?? false
+  const apiBaseUrl = getPublishingApiBaseUrl(required)
+
+  if (!apiBaseUrl) {
+    return null
+  }
+
+  const result = await loadPublishedSkillList(apiBaseUrl, query)
+
+  if (required && result.data.length === 0) {
+    throw new Error(
+      `Static publishing requires a non-empty ${query.sort} skill list.`
+    )
+  }
+
+  return result
 }
 
 export async function getPublishedSkillDetail(
@@ -125,36 +196,47 @@ function getPublishingApiBaseUrl(required: boolean) {
   return apiBaseUrl
 }
 
-function parseSkillListPage(payload: unknown, requestedPage: number): SkillListResponse {
+function parseSkillListPage(
+  payload: unknown,
+  expectedQuery: Pick<SkillListQuery, "page" | "limit" | "sort">
+): SkillListResponse {
   if (!isRecord(payload) || !Array.isArray(payload.data) || !isRecord(payload.pagination)) {
     throw new Error(
-      `Skill slug request returned a malformed response on page ${requestedPage}.`
+      `Published skill request returned malformed data on page ${expectedQuery.page}.`
     )
   }
 
   const { page, limit, total, totalPages } = payload.pagination
+  const expectedItemCount = isNonNegativeInteger(total)
+    ? Math.max(
+        0,
+        Math.min(expectedQuery.limit, total - (expectedQuery.page - 1) * expectedQuery.limit)
+      )
+    : null
 
   if (
-    page !== requestedPage ||
-    limit !== skillListPageSize ||
+    page !== expectedQuery.page ||
+    limit !== expectedQuery.limit ||
     !isNonNegativeInteger(total) ||
-    !isNonNegativeInteger(totalPages)
+    !isNonNegativeInteger(totalPages) ||
+    totalPages !== (total === 0 ? 0 : Math.ceil(total / expectedQuery.limit)) ||
+    payload.data.length !== expectedItemCount
   ) {
     throw new Error(
-      `Skill slug request returned malformed pagination on page ${requestedPage}.`
+      `Published skill request returned malformed pagination on page ${expectedQuery.page}.`
     )
   }
 
   const data = payload.data.map((item, index) => {
-    if (!isRecord(item) || typeof item.slug !== "string" || item.slug.trim() === "") {
+    if (!isRecord(item)) {
       throw new Error(
-        `Skill slug request returned an invalid slug at item ${index} on page ${requestedPage}.`
+        `Published skill request returned an invalid item at index ${index} on page ${expectedQuery.page}.`
       )
     }
 
-    if (!isSkillListItemContract(item)) {
+    if (!isSkillListItem(item, expectedQuery.sort)) {
       throw new Error(
-        `Skill slug request is missing the freshness or popularity contract at item ${index} on page ${requestedPage}.`
+        `Published skill request returned an invalid item at index ${index} on page ${expectedQuery.page}.`
       )
     }
 
@@ -163,7 +245,12 @@ function parseSkillListPage(payload: unknown, requestedPage: number): SkillListR
 
   return {
     data: data as SkillListResponse["data"],
-    pagination: { page, limit, total, totalPages },
+    pagination: {
+      page: page as number,
+      limit: limit as number,
+      total: total as number,
+      totalPages: totalPages as number,
+    },
   }
 }
 
@@ -242,8 +329,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
-function isSkillListItemContract(value: Record<string, unknown>) {
-  return isSkillFreshness(value.freshness) && isSkillPopularity(value.popularity)
+function isSkillListItem(
+  value: Record<string, unknown>,
+  sort: SkillListQuery["sort"]
+): value is Record<string, unknown> & SkillListItem {
+  const hasValidTrend =
+    value.trendDelta === undefined || isNonNegativeInteger(value.trendDelta)
+
+  return (
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.slug) &&
+    isNonEmptyString(value.name) &&
+    isNonEmptyString(value.description) &&
+    isStringArray(value.tags) &&
+    isNonNegativeInteger(value.upvotesCount) &&
+    isNonNegativeInteger(value.downvotesCount) &&
+    isNonNegativeInteger(value.commentsCount) &&
+    Number.isInteger(value.score) &&
+    isNullableVoteReasonCount(value.topReason) &&
+    isSkillFreshness(value.freshness) &&
+    isSkillPopularity(value.popularity) &&
+    hasValidTrend &&
+    (sort !== "trending" || isPositiveInteger(value.trendDelta))
+  )
+}
+
+function isNullableVoteReasonCount(value: unknown) {
+  return value === null || isVoteReasonCount(value)
 }
 
 function isSkillFreshness(value: unknown) {
