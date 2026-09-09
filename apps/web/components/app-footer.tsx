@@ -30,6 +30,7 @@ export function AppFooter() {
           <nav aria-label="Footer navigation">
             <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
               <li><Link aria-current={pathname?.startsWith("/skills") ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/skills">Browse</Link></li>
+              <li><Link aria-current={pathname?.startsWith("/guides") ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/guides">Guides</Link></li>
               <li><Link aria-current={pathname === "/about" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/about">About</Link></li>
               <li><Link aria-current={pathname === "/privacy" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/privacy">Privacy</Link></li>
               <li><Link aria-current={pathname === "/terms" ? "page" : undefined} className="outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50" href="/terms">Terms</Link></li>

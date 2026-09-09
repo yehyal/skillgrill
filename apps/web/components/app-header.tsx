@@ -130,6 +130,13 @@ export function AppHeader() {
               <span className="sm:hidden">Browse</span>
               <span className="hidden sm:inline">Browse skills</span>
             </Link>
+            <Link
+              href="/guides"
+              aria-current={pathname?.startsWith("/guides") ? "page" : undefined}
+              className="rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              Guides
+            </Link>
           </nav>
 
           <a
