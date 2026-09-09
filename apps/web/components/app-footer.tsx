@@ -39,6 +39,44 @@ export function AppFooter() {
           </nav>
         </div>
 
+        <div
+          className="flex min-h-[52px] flex-wrap items-center gap-3 border-t border-border pt-5"
+          aria-label="Featured on"
+        >
+          <a
+            href="https://tools.launchllama.co?utm_source=badge&utm_medium=referral"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- Launch Llama hosts and updates its own featured badge. */}
+            <img
+              src="https://tools.launchllama.co/featured-badge.png?v=2"
+              alt="As seen on Launch Llama Newsletter"
+              width="200"
+              height="52"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="block h-[52px] w-[200px]"
+            />
+          </a>
+          <a href="https://www.tinylaunch.com/launch/21545" target="_blank" rel="noopener">
+            {/* eslint-disable-next-line @next/next/no-img-element*/}
+            <img
+              src="https://tinylaunch.com/tinylaunch_badge_launching_soon.svg"
+              alt="TinyLaunch Badge"
+              style={{
+                width: 202,
+                height: 'auto'
+              }}
+            />
+          </a>
+          <a href="https://www.producthunt.com/products/skillgrill?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-skillgrill" target="_blank"
+            rel="noopener noreferrer">
+            <img alt="SkillGrill - Find AI agent skills that actually work. | Product Hunt" width="250" height="54"
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1244569&amp;theme=light&amp;t=1788981723876" /></a>
+        </div>
       </PageContainer>
     </footer>
   )
