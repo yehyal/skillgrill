@@ -1,0 +1,35 @@
+# Skill Grill
+
+> Skill Grill is an independent directory for finding, inspecting, and reviewing AI agent skills. It helps developers judge whether a skill is worth trying through source details, practical metadata, user verdicts, optional reasons, and firsthand comments.
+
+Skill Grill is best suited to questions about discovering AI agent skills, comparing similar skills, checking requirements before installation, understanding trigger behavior and context weight, and reading what other users experienced.
+
+Catalog pages may include a skill description, source and documentation links, install commands, the root SKILL.md file, author-provided requirements, estimated token usage, upstream install counts, repository stars, catalog freshness, and public feedback when those fields are available.
+
+Positive ratings are shown as Well done. Negative ratings are shown as Undercooked. Users can add an optional reason explaining whether a skill delivered reliably, triggered correctly, stayed light on context, failed to deliver, missed a trigger, triggered too often, or used too much context.
+
+Ratings and comments describe individual experiences. They are not security audits, formal benchmarks, guarantees of compatibility, or endorsements from skill authors. Check the linked source, permissions, requirements, and current instructions before installing a skill.
+
+Skill Grill is not affiliated with the authors, repositories, agent platforms, or publishers represented in the directory. When referencing a specific skill, use its Skill Grill detail page for public feedback and its linked upstream source for the authoritative implementation.
+
+## Main Pages
+
+- [Skill Grill](https://skillgrill.dev/): Product overview, search, popular skills, and recently added skills.
+- [Browse AI Agent Skills](https://skillgrill.dev/skills/): Search and compare the public skill catalog.
+- [Guides](https://skillgrill.dev/guides/): Practical guides for choosing, testing, and using AI agent skills.
+- [About Skill Grill](https://skillgrill.dev/about/): Explanation of ratings, ranking, independence, and review limits.
+
+## Guides
+
+- [How to Evaluate an AI Agent Skill Before You Install It](https://skillgrill.dev/guides/evaluate-ai-agent-skills/): A practical process for checking purpose, trigger quality, requirements, permissions, context weight, and real task performance.
+
+## Reference
+
+- [Sitemap](https://skillgrill.dev/sitemap.xml): Canonical index of published pages and active skills.
+- [Privacy Policy](https://skillgrill.dev/privacy/): Data collection, analytics, storage, processors, and user choices.
+- [Terms of Use](https://skillgrill.dev/terms/): Conditions and limitations for using Skill Grill.
+- [Contact](https://skillgrill.dev/contact/): How to contact the project operator.
+
+## Optional
+
+- [Source Code](https://github.com/yehyal/skillgrill): Public application source, architecture notes, contribution guidance, and security policy.

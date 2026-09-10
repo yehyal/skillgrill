@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons"
 import Link from "next/link"
+import {
+  formatGuideDate,
+  getPublishedGuideSummaries,
+} from "@/lib/guide-publishing"
 import { getPublishedSkillList } from "@/lib/skill-publishing"
 import { siteConfig } from "@/lib/site-config"
 
@@ -33,10 +37,12 @@ export const metadata = {
 }
 
 export default async function Home() {
-  const [initialLeaderboardData, initialRecentData] = await Promise.all([
+  const [initialLeaderboardData, initialRecentData, guides] = await Promise.all([
     getPublishingList({ tags: [], page: 1, limit: 5, sort: "popular" }),
     getPublishingList({ tags: [], page: 1, limit: 4, sort: "newest" }),
+    getPublishedGuideSummaries({ required: isStaticExport }),
   ])
+  const featuredGuides = guides.slice(0, 3)
 
   const websiteStructuredData = {
     "@context": "https://schema.org",
@@ -139,6 +145,70 @@ export default async function Home() {
           initialLeaderboardData={initialLeaderboardData ?? undefined}
           initialRecentData={initialRecentData ?? undefined}
         />
+
+        {featuredGuides.length > 0 ? (
+          <section aria-labelledby="home-guides-title" className="border-t border-border bg-card">
+            <PageContainer className="py-8 sm:py-10">
+              <div className="flex items-end justify-between gap-6 border-b border-border pb-4">
+                <div>
+                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">
+                    Useful before you install
+                  </p>
+                  <h2 id="home-guides-title" className="mt-2 text-xl font-semibold">
+                    Guides for choosing better skills.
+                  </h2>
+                </div>
+                <Button asChild variant="ghost" size="sm" className="shrink-0">
+                  <Link href="/guides/">
+                    View all <ArrowRightIcon aria-hidden="true" />
+                  </Link>
+                </Button>
+              </div>
+
+              <div
+                className={`grid divide-y divide-border md:divide-x md:divide-y-0 ${
+                  featuredGuides.length === 1
+                    ? "md:grid-cols-1"
+                    : featuredGuides.length === 2
+                      ? "md:grid-cols-2"
+                      : "md:grid-cols-3"
+                }`}
+              >
+                {featuredGuides.map((guide, index) => (
+                  <article
+                    key={guide.slug}
+                    className={`py-5 md:py-6 ${
+                      index === 0
+                        ? "md:pr-6"
+                        : index === featuredGuides.length - 1
+                          ? "md:pl-6"
+                          : "md:px-6"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>{guide.category}</span>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={guide.publishedAt}>
+                        {formatGuideDate(guide.publishedAt)}
+                      </time>
+                    </div>
+                    <h3 className="mt-3 text-lg font-semibold leading-snug">
+                      <Link
+                        href={`/guides/${encodeURIComponent(guide.slug)}/`}
+                        className="rounded-sm outline-none transition-colors hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      >
+                        {guide.title}
+                      </Link>
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                      {guide.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </PageContainer>
+          </section>
+        ) : null}
         </main>
       </SiteShell>
     </>

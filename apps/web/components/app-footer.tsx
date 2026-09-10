@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation"
 import { PageContainer } from "@/components/page-container"
 import { siteConfig } from "@/lib/site-config"
 
+const productHuntUrl = "https://www.producthunt.com/products/skillgrill?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-skillgrill"
+const productHuntBadgeUrl = "https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1244569&theme=light&t=1788981723876"
+
 export function AppFooter() {
   const pathname = usePathname()
 
@@ -72,10 +75,19 @@ export function AppFooter() {
               }}
             />
           </a>
-          <a href="https://www.producthunt.com/products/skillgrill?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-skillgrill" target="_blank"
-            rel="noopener noreferrer">
-            <img alt="SkillGrill - Find AI agent skills that actually work. | Product Hunt" width="250" height="54"
-              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1244569&amp;theme=light&amp;t=1788981723876" /></a>
+          <a href={productHuntUrl} target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element -- Product Hunt hosts and updates its own featured badge. */}
+            <img
+              src={productHuntBadgeUrl}
+              alt="SkillGrill - Find AI agent skills that actually work. | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="block h-[54px] w-[250px]"
+            />
+          </a>
         </div>
       </PageContainer>
     </footer>
